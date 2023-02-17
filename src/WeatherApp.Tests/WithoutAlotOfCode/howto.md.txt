@@ -1,0 +1,25 @@
+https://www.cryptool.org/en/cto/openssl
+
+openssl genrsa -aes-256-cbc -passout pass:inmemory -out privkey.pem 2048
+openssl req -new -x509 -key privkey.pem -out openssl_crt.pem -outform pem
+
+	Enter pass phrase for privkey.pem:inmemory
+
+	Country Name (2 letter code) [AU]:BE
+	State or Province Name (full name) [Some-State]:Brussels
+	Locality Name (eg, city) []:Brussels
+	Organization Name (eg, company) [Internet Widgits Pty Ltd]:DONOTTRUST
+	Organizational Unit Name (eg, section) []:TESTS
+	Common Name (e.g. server FQDN or YOUR name) []:i.do.not.exist
+	Email Address []:
+openssl rsa -traditional -in private-key.pem -out private-keypkcs1.pem #Needed for .net core
+
+openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in openssl_crt.pem
+	Enter pass phrase for privkey.pem:inmemory
+	Enter Export Password:inmemory
+	Verifying - Enter Export Password:inmemory 
+
+openssl rsa -pubout -in privkey.pem -passin pass:inmemory -outform PEM -out pubkey.pem
+
+Convert pubkey.pem for jwks.json
+	https://8gwifi.org/jwkconvertfunctions.jsp
