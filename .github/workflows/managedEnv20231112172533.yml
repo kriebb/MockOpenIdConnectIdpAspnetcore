@@ -1,0 +1,36 @@
+on:
+  push:
+    branches:
+    - main
+env:
+  DOTNET_CORE_VERSION: 7.0.x
+  CONTAINER_APP_NAME: weatherapp-container-app
+  CONTAINER_APP_ENVIRONMENT_NAME: managedEnv20231112172533
+  RESOURCE_GROUP: UpdateConference
+  CONTAINER_REGISTRY_NAME: registry20231112173106
+  CONTAINER_REGISTRY_LOGIN_SERVER: registry20231112173106.azurecr.io
+jobs:
+  BuildAndDeployContainerApp:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.managedEnv20231112172533_SPN }}
+    - name: Container App deploy
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        appSourcePath: ${{ github.workspace }}
+        acrName: ${{ env.CONTAINER_REGISTRY_NAME }}
+        acrUsername: ${{ secrets.registry20231112173106_USERNAME_F918 }}
+        acrPassword: ${{ secrets.registry20231112173106_PASSWORD_F918 }}
+        imageToBuild: ${{ env.CONTAINER_REGISTRY_LOGIN_SERVER }}/${{ env.CONTAINER_APP_NAME }}:${{ github.sha }}
+        containerAppName: ${{ env.CONTAINER_APP_NAME }}
+        containerAppEnvironment: ${{ env.CONTAINER_APP_ENVIRONMENT_NAME }}
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
