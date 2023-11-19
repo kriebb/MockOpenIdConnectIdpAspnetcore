@@ -1,0 +1,40 @@
+name: .NET 6
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Test_Project_Path: src\WeatherApp.Tests\WeatherApp.Tests.csproj                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - uses: Elskom/build-dotnet@v1.1.1
+      with:
+        # Filepath of the solution of which contains all the projects to be built, optionally tested and packed, relative to root of repository
+        SOLUTION_FILE_PATH: src\MockOutOauth2ProviderSample.sln
+        # Flag to toggle running unit tests for the projects built, disabled by default
+        TEST: true
