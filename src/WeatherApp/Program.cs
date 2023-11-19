@@ -1,4 +1,3 @@
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,44 +14,23 @@ builder.Logging.AddDebug();
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
-    builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer();
 
 
 builder.Services.AddHttpLogging(options => options.LoggingFields = HttpLoggingFields.Request | HttpLoggingFields.ResponseBody);
-builder.Services.AddAuthorization(authorizationOptions =>
-{
-   
-    authorizationOptions.AddPolicy("OnlyBelgium", policy =>
-    {
-        policy.RequireClaim("country", "Belgium");
 
-    });
-        
-    authorizationOptions.AddPolicy("WeatherForecast:Get", policy =>
-        {
-            policy.RequireClaim("scope", "weatherforecast:read");
-        });
-});
+
+//DEMO 1: Ensure that there is an jwt attribute
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     
-}).AddJwtBearer(o =>
-{
-    o.MapInboundClaims = false;
-    o.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        NameClaimType = "sub",
-    };
-});
+}).AddJwtBearer();
+
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -63,20 +41,18 @@ if (app.Environment.IsDevelopment())
     app.UseHttpLogging();
 
 }
-
-
 app.UseHttpsRedirection();
-
 app.UseRouting();
+
+/**********************************************/
+//Demo 1: First!
 app.UseAuthentication();
-
+//Demo 1: Second!
 app.UseAuthorization();
+/**********************************************/
 
-app.UseEndpoints(endpoints =>
-{
+app.MapControllers();
 
-    endpoints.MapControllers();
-});
 
 app.Run();
 
