@@ -7,16 +7,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
-using WeatherApp.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
-namespace WeatherApp.Tests.Controllers;
+namespace WeatherApp.Demo1.Tests.Controllers;
 
 
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
 {
-    private Func<ITestOutputHelper?> _testoutputhelper = () => null;
+    private Func<ITestOutputHelper?> _testOutputHelper = () => null;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -27,11 +26,6 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             {
                 configuration.AddJsonFile("appsettings.json");
                 configuration.AddJsonFile("appsettings.Development.json");
-                configuration.AddInMemoryCollection(new Dictionary<string, string>()
-                {
-                    { "Jwt:Audience", Consts.ValidAudience },
-                    { "Jwt:Issuer", Consts.ValidIssuer }
-                }!);
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -43,41 +37,41 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             {
                 loggingBuilder.AddConsole();
                 loggingBuilder.AddDebug();
-                loggingBuilder.AddXUnit(new TestOutputHelperFuncAccessor(_testoutputhelper));
+                loggingBuilder.AddXUnit(new TestOutputHelperFuncAccessor(_testOutputHelper));
             })
             .ConfigureTestServices(services =>
             {
- 
+
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
-                    { 
-
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+                    {
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {
                             OnAuthenticationFailed = context =>
                             {
                                 var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
-                                
+
                                 testOutputHelper?.WriteLine("Authentication Failed. Result: {0} Failure:{1}", context.Exception.Message, context.Result?.Failure?.Message);
                                 return Task.CompletedTask;
                             },
-                            OnForbidden = context => {
+                            OnForbidden = context =>
+                            {
                                 var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
-                                testOutputHelper?.WriteLine("Token Validated. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                testOutputHelper?.WriteLine("Token Validated. Result: {0} Failure:{1}", context.Result?.Succeeded, context.Result?.Failure?.Message);
                                 return Task.CompletedTask;
                             },
                             OnTokenValidated = context =>
                             {
                                 var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
-                                testOutputHelper?.WriteLine("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
+                                testOutputHelper?.WriteLine("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name,
                                     string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
                                 return Task.CompletedTask;
                             },
-                            OnMessageReceived = context => {
+                            OnMessageReceived = context =>
+                            {
                                 var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
                                 testOutputHelper?.WriteLine("Message Received.");
@@ -88,12 +82,19 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             });
     }
 
+
+    protected override void ConfigureClient(HttpClient client)
+    {
+        client.BaseAddress = Consts.BaseAddress;
+
+    }
+
     /// <summary>
     /// Clears the current <see cref="ITestOutputHelper"/>.
     /// </summary>
     public void ClearOutputHelper()
     {
-        _testoutputhelper = () => null;
+        _testOutputHelper = () => null;
     }
 
     /// <summary>
@@ -102,35 +103,17 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
     /// <param name="value">The <see cref="ITestOutputHelper"/> to use.</param>
     public void SetOutputHelper(ITestOutputHelper value)
     {
-        _testoutputhelper = () => value;
+        _testOutputHelper = () => value;
     }
 
-
-
-
-
-
-    protected override void ConfigureClient(HttpClient client)
+    private sealed class TestOutputHelperFuncAccessor
+        (Func<ITestOutputHelper?> testOutputHelper) : ITestOutputHelperAccessor
     {
-        client.BaseAddress = Consts.BaseAddress;
-
+        public ITestOutputHelper? OutputHelper
+        {
+            get => testOutputHelper.Invoke();
+            set { testOutputHelper = () => value; }
+        }
     }
 
-
-}
-
-public class TestOutputHelperFuncAccessor : ITestOutputHelperAccessor
-{
-    private Func<ITestOutputHelper?> _testoutputhelper;
-
-    public TestOutputHelperFuncAccessor(Func<ITestOutputHelper?> testoutputhelper)
-    {
-        _testoutputhelper = testoutputhelper;
-    }
-
-    public ITestOutputHelper? OutputHelper
-    {
-        get { return _testoutputhelper.Invoke();}
-        set { _testoutputhelper = () => value; }
-    } 
 }

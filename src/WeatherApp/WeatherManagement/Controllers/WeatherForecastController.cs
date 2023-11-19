@@ -9,15 +9,10 @@ namespace WeatherApp.WeatherManagement.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize(Policy = "OnlyBelgium")]
-public class WeatherForecastController : ControllerBase
+[Authorize]
+public class WeatherForecastController(ISystemClock systemClock) : ControllerBase
 {
-    private readonly ISystemClock _systemClock;
-
-    public WeatherForecastController(ISystemClock systemClock)
-    {
-        _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
-    }
+    private readonly ISystemClock _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
 
     private static readonly TemperatureCelciusBucket[] TempCBuckets = new[]
     {
@@ -33,7 +28,8 @@ public class WeatherForecastController : ControllerBase
 
 
     [HttpGet()]
-    [Authorize(Policy = "WeatherForecast:Get")]
+    [Authorize]
+
     public WeatherForecast Get()
     {
         // Generate random bytes from the RandomNumberGenerator
