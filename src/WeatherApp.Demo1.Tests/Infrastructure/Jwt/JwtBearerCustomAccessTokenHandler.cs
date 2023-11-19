@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
-using WeatherApp.Tests.Controllers.Models;
+using WeatherApp.Demo2.Tests.Controllers;
 using Xunit.Abstractions;
 
-namespace WeatherApp.Tests.Infrastructure.Jwt;
+namespace WeatherApp.Demo2.Tests.Infrastructure.Jwt;
 
 public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessTokenParameters,
         ITestOutputHelper testOutputHelper)
@@ -12,20 +12,22 @@ public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessToken
 
     protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var encodedAccessToken = JwtBearerAccessTokenFactory.Create(_accessTokenParameters);
-        testOutputHelper.WriteLine("Generated the following encoded accesstoken");
-        testOutputHelper.WriteLine(encodedAccessToken);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", encodedAccessToken);
+        request.Headers.Authorization = BuildBearerHeader(_accessTokenParameters);
         return base.Send(request, cancellationToken);
     }
 
-   
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var encodedAccessToken = JwtBearerAccessTokenFactory.Create(_accessTokenParameters);
+        request.Headers.Authorization = BuildBearerHeader(_accessTokenParameters);
+        return base.SendAsync(request, cancellationToken);
+    }
+
+    private AuthenticationHeaderValue BuildBearerHeader(AccessTokenParameters tokenParameters)
+    {
+         var encodedAccessToken = JwtBearerAccessTokenFactory.Create(tokenParameters);
         testOutputHelper.WriteLine("Generated the following encoded accesstoken");
         testOutputHelper.WriteLine(encodedAccessToken);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", encodedAccessToken);
-        return base.SendAsync(request, cancellationToken);
+        return new AuthenticationHeaderValue("Bearer", encodedAccessToken);
     }
 }

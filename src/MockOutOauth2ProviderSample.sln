@@ -6,7 +6,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp", "WeatherApp\We
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp.Tests", "WeatherApp.Tests\WeatherApp.Tests.csproj", "{0D0CF45E-9668-4039-B674-609E63BAB671}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp.Demo1.Tests", "WeatherApp.Demo1.Tests\WeatherApp.Demo1.Tests.csproj", "{BC0BBE94-630D-40D5-89FC-9EE6D1CBBCDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp.Demo2.Tests", "WeatherApp.Demo1.Tests\WeatherApp.Demo2.Tests.csproj", "{BC0BBE94-630D-40D5-89FC-9EE6D1CBBCDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

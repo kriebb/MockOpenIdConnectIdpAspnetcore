@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
+using WeatherApp.Demo2.Tests.Controllers;
+using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -26,6 +28,12 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             {
                 configuration.AddJsonFile("appsettings.json");
                 configuration.AddJsonFile("appsettings.Development.json");
+                /***DEMO2*/
+                configuration.AddInMemoryCollection(new[]
+                {
+                    new KeyValuePair<string, string?>("Jwt:Issuer", Consts.ValidIssuer),
+                    new KeyValuePair<string, string?>("Jwt:Audience", Consts.ValidAudience)
+                });
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -45,6 +53,9 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
+                        /***DEMO2*/
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {

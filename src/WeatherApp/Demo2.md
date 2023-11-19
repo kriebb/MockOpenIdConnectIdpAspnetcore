@@ -1,21 +1,5 @@
 //DEMO 2: Ensure inspection of the content of the authorization Attribute
 - Program.cs
-
-builder.Services.AddAuthorization(authorizationOptions =>
-{
-
-    authorizationOptions.AddPolicy("OnlyBelgium", policy =>
-    {
-        policy.RequireClaim("country", "Belgium");
-
-    });
-
-    authorizationOptions.AddPolicy("WeatherForecast:Get", policy =>
-    {
-        policy.RequireClaim("scope", "weatherforecast:read");
-    });
-});
-
 - On method OnAddAuthentication
 
 .AddJwtBearer(o =>
@@ -33,10 +17,11 @@ builder.Services.AddAuthorization(authorizationOptions =>
     };
 });
 
+Run test: Now we see that the Signature fails =>         
+Authentication Failed. Result: IDX10500: Signature validation failed. No security keys were provided to validate the signature. Failure:
 
-- WeatherForecastController.cs
+SignatureValidator = (token, parameters) => new JsonWebToken(token)
+Authentication Failed. Result: IDX10253: RequireSignedTokens property on ValidationParameters is set 
+=> remove the SignatureValidator and mock the openidprovider
 
-  - Class level 
-[Authorize(Policy = "OnlyBelgium")]
-  - Operation level
-[Authorize(Policy = "WeatherForecast:Get")]
+=> Go to the test

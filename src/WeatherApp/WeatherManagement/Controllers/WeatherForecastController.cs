@@ -9,7 +9,7 @@ namespace WeatherApp.WeatherManagement.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize]
+[Authorize(Policy = "OnlyBelgium")]
 public class WeatherForecastController(ISystemClock systemClock) : ControllerBase
 {
     private readonly ISystemClock _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
@@ -28,7 +28,7 @@ public class WeatherForecastController(ISystemClock systemClock) : ControllerBas
 
 
     [HttpGet()]
-    [Authorize]
+        [Authorize(Policy = "WeatherForecast:Get")]
 
     public WeatherForecast Get()
     {

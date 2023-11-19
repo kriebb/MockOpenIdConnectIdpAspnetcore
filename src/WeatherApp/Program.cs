@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Internal;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 
@@ -27,9 +29,35 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     
-}).AddJwtBearer();
+}).AddJwtBearer(o =>
+{
+    o.MapInboundClaims = false;
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        NameClaimType = "sub",
+    };
+});
 
+builder.Services.AddAuthorization(authorizationOptions =>
+{
 
+    authorizationOptions.AddPolicy("OnlyBelgium", policy =>
+    {
+        policy.RequireClaim("country", "Belgium");
+
+    });
+
+    authorizationOptions.AddPolicy("WeatherForecast:Get", policy =>
+    {
+        policy.RequireClaim("scope", "weatherforecast:read");
+    });
+});
 
 var app = builder.Build();
 
