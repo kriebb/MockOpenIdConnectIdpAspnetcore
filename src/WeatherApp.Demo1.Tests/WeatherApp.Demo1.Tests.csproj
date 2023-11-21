@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Tests.demosnippets.cs" />
     <Compile Remove="Usings.cs" />
   </ItemGroup>
 
@@ -44,6 +45,10 @@
       <Link>appsettings.json</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Tests.demosnippets.cs" />
   </ItemGroup>
 
 </Project>
