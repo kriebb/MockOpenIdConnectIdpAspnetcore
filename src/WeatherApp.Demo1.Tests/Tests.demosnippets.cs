@@ -19,3 +19,7 @@ public void AddOrReplaceClaim(string claimType, string claimValue)
     Claims ??= new List<Claim>();
     Claims.Add(new Claim(claimType, claimValue));
 }
+
+//DEMOSNIPPETS-LABEL 03_AddInvalidDataInTestsClass
+private const string CountryClaimType = "country";
+private const string CountryClaimInvalidValue = "France";

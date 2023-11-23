@@ -12,6 +12,9 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
 {
     public sealed class GetWeatherForecast: WeatherForecastControllerTests,IDisposable
     {
+        private const string CountryClaimType = "country";
+        private const string CountryClaimInvalidValue = "France";
+
         private readonly ITestOutputHelper _testOutputHelper;
         private readonly WeatherForecastServerSetupFixture _fixture;
 
@@ -42,8 +45,17 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
         }
 
-        //INSERT DEMO4 BELOW
-
+        [Fact()]
+        public async Task WhenWeGetWeatherForecast_WithAccessToken_InvalidClaim_ShouldReturn403()
+        {
+            var accessTokenParameters = new AccessTokenParameters();
+            accessTokenParameters.AddOrReplaceClaim(CountryClaimType, CountryClaimInvalidValue);
+            var httpClient =
+                _fixture.CreateDefaultClient(
+                    new JwtBearerCustomAccessTokenHandler(accessTokenParameters, _testOutputHelper));
+            var response = await httpClient.GetAsync($"/WeatherForecast/");
+            response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        }
 
         public void Dispose()
         {
@@ -68,7 +80,15 @@ public record AccessTokenParameters
             Consts.CountryClaimValidValue)
 
     };
-    //INSERT DEMO4 BELOW
 
+    public void AddOrReplaceClaim(string claimType, string claimValue)
+    {
+        var claim = Claims?.FirstOrDefault(x => x.Type == claimType);
+        if (claim != null)
+            Claims?.Remove(claim);
+
+        Claims ??= new List<Claim>();
+        Claims.Add(new Claim(claimType, claimValue));
+    }
 }
     
