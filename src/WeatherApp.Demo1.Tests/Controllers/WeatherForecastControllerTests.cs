@@ -31,11 +31,6 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
             response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         }
 
-        /*
-         *  Demo: Write Test2: With Valid AccessToken
-         *
-         * */
-        //.Tests In Test class
         [Fact()]
         public async Task WhenWeGetWeatherForecast_WithValidAccessToken_ShouldReturn200()
         {
@@ -47,6 +42,9 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
         }
 
+        //INSERT DEMO4 BELOW
+
+
         public void Dispose()
         {
             _fixture.ClearOutputHelper();
@@ -55,9 +53,7 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
 
 
 }
-//Demo: Add AccessToken Parameters
 
-//.Tests New file in Test class
 public record AccessTokenParameters
 {
     public X509Certificate2 SigningCertificate { get; set; } = Consts.ValidSigningCertificate.ToX509Certificate2();
@@ -66,14 +62,13 @@ public record AccessTokenParameters
 
     public List<Claim> Claims { get; set; } = new()
     {
-        new(Consts.SubClaimType, Consts.SubClaimValidValue)
-        //DEMO2 INSERT BELOW
-        //.Tests AccessTokenParameters.cs
-        ,
+        new(Consts.SubClaimType, Consts.SubClaimValidValue),
         new(Consts.ScopeClaimType, Consts.ScopeClaimValidValue),
         new(Consts.CountryClaimType,
             Consts.CountryClaimValidValue)
 
     };
+    //INSERT DEMO4 BELOW
+
 }
     
