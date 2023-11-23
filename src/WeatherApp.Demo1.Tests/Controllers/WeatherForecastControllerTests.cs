@@ -38,18 +38,6 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
          *  Demo: Write Test2: With Valid AccessToken
          *
          * */
-        [Fact()]
-        public async Task WhenWeGetWeatherForecast_WithValidAccessToken_ShouldReturn200()
-        {
-            var accessTokenParameters = new AccessTokenParameters();
-
-
-            var httpClient = _fixture.CreateDefaultClient(new JwtBearerCustomAccessTokenHandler(accessTokenParameters, _testOutputHelper));
-            var response = await httpClient.GetAsync($"/WeatherForecast/");
-
-
-            response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        }
 
         public void Dispose()
         {
@@ -59,19 +47,4 @@ public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fi
 
 
 }
-
-public record AccessTokenParameters
-{
-    public X509Certificate2 SigningCertificate { get; set; } = Consts.ValidSigningCertificate.ToX509Certificate2();
-    public string Audience { get; set; } = Consts.ValidAudience;
-    public string Issuer { get; set; } = Consts.ValidIssuer;
-    public List<Claim> Claims { get; set; } = new()
-    {
-        new(Consts.SubClaimType, Consts.SubClaimValidValue),
-        new(Consts.ScopeClaimType, Consts.ScopeClaimValidValue),
-        new(Consts.CountryClaimType,
-            Consts.CountryClaimValidValue)
-
-    };
-
-}
+//Demo: Add AccessToken Parameters

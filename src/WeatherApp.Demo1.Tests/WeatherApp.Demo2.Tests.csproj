@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\OpenId\**" />
+    <Compile Remove="Infrastructure\Security\**" />
+    <EmbeddedResource Remove="Infrastructure\OpenId\**" />
+    <EmbeddedResource Remove="Infrastructure\Security\**" />
+    <None Remove="Infrastructure\OpenId\**" />
+    <None Remove="Infrastructure\Security\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Tests.demosnippets.cs" />
     <Compile Remove="Usings.cs" />
   </ItemGroup>
 
@@ -44,6 +54,10 @@
       <Link>appsettings.json</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Tests.demosnippets.cs" />
   </ItemGroup>
 
 </Project>

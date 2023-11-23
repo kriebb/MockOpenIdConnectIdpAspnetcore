@@ -29,11 +29,6 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 configuration.AddJsonFile("appsettings.json");
                 configuration.AddJsonFile("appsettings.Development.json");
                 /***DEMO2*/
-                configuration.AddInMemoryCollection(new[]
-                {
-                    new KeyValuePair<string, string?>("Jwt:Issuer", Consts.ValidIssuer),
-                    new KeyValuePair<string, string?>("Jwt:Audience", Consts.ValidAudience)
-                });
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -54,7 +49,6 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                     options =>
                     {
                         /***DEMO2*/
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
 
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()

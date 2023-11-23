@@ -8,6 +8,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp.Tests", "Weather
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApp.Demo2.Tests", "WeatherApp.Demo1.Tests\WeatherApp.Demo2.Tests.csproj", "{BC0BBE94-630D-40D5-89FC-9EE6D1CBBCDE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scenario", "Scenario", "{D0B15575-64C6-4D6E-A52D-3D6871E5B6BB}"
+	ProjectSection(SolutionItems) = preProject
+		Demo2.md = Demo2.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
