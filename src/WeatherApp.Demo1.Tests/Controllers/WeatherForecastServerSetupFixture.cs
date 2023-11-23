@@ -12,7 +12,7 @@ using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace WeatherApp.Demo1.Tests.Controllers;
+namespace WeatherApp.Demo2.Tests.Controllers;
 
 
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
@@ -26,9 +26,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
-                configuration.AddJsonFile("appsettings.json");
-                configuration.AddJsonFile("appsettings.Development.json");
-                /***DEMO2*/
+
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -49,7 +47,8 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                     options =>
                     {
                         /***DEMO2*/
-
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+                        /****/
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {

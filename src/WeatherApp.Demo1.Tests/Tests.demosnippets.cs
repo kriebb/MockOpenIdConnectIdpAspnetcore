@@ -1,6 +1,5 @@
 ﻿//DEMOSNIPPETS-TAB Demo2 Application
 //DEMOSNIPPETS-LABEL 01_Test2
-//.Tests In Test class
 [Fact()]
 public async Task WhenWeGetWeatherForecast_WithValidAccessToken_ShouldReturn200()
 {
@@ -10,7 +9,6 @@ public async Task WhenWeGetWeatherForecast_WithValidAccessToken_ShouldReturn200(
     response.StatusCode.ShouldBe(HttpStatusCode.OK);
 }
 //DEMOSNIPPETS-LABEL 02_AccessTokenParameters
-//.Tests New file in Test class
 public record AccessTokenParameters
 {
     public X509Certificate2 SigningCertificate { get; set; } = Consts.ValidSigningCertificate.ToX509Certificate2();
@@ -23,13 +21,6 @@ public record AccessTokenParameters
     };
 }
 //DEMOSNIPPETS-LABEL 02a_AccessTokenHandler
-//.Tests New File Infrastructure / Jwt
-using System.Net.Http.Headers;
-using WeatherApp.Demo2.Tests.Controllers;
-using Xunit.Abstractions;
-
-namespace WeatherApp.Demo2.Tests.Infrastructure.Jwt;
-
 public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessTokenParameters,
         ITestOutputHelper testOutputHelper)
     : DelegatingHandler
@@ -59,14 +50,6 @@ public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessToken
 }
 
 //DEMOSNIPPETS-LABEL 02b_AccessTokenFactory
-//.Tests New file in Infrastructure/Jwt
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using WeatherApp.Demo2.Tests.Controllers;
-
-namespace WeatherApp.Demo2.Tests.Infrastructure.Jwt;
-
 public class JwtBearerAccessTokenFactory
 {
     public static string Create(AccessTokenParameters accessTokenParameters)
@@ -98,20 +81,14 @@ public class JwtBearerAccessTokenFactory
     }
 }
 
-//DEMOSNIPPETS-LABEL 03_Const_Basic
-//.Tests where Testclass is => New file Consts.cs
-public class Const
-{
-
+//DEMOSNIPPETS-LABEL 03_Const_Basic_Addition
     public static PemCertificate ValidSigningCertificate { get; } = SelfSignedAccessTokenPemCertificateFactory.Create();
     public static string ValidIssuer { get; } = $"Issuer:Dotnet:WeatherApp:Tests:Project";
     public static string ValidAudience { get; } = $"Audience:Dotnet:WeatherApp:Project";
     public const string SubClaimType = "sub";
     public const string SubClaimValidValue = "sub-value";
 
-}
-//DEMOSNIPPETS-LABEL 04_Program.AddAuthentication
-//.App Program.cs
+//DEMOSNIPPETS-LABEL 04_Program.ReplaceAddJwtBearer
 .AddJwtBearer(o =>
 {
     o.MapInboundClaims = false;
@@ -129,19 +106,16 @@ public class Const
 
 //DEMOSNIPPETS-LABEL 05_SignatureValidator
 SignatureValidator = (token, parameters) => new JsonWebToken(token)
-
+//DEMOSNIPPETS-LABEL 06_AppsettingsJwtBearerOptions
+"Jwt": {
+    "Audience": "Audience:Dotnet:WeatherApp:Project",
+    "Issuer": "Issuer:Dotnet:WeatherApp:Tests:Project"
+}
 //DEMOSNIPPETS-LABEL 06_PostConfigureJwtBearerOptions
-//.Tests Serversetupfixture
-.ConfigureTestServices(services =>
-{
 
-    services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
-        options =>
-        {
-            options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
 
 //DEMOSNIPPETS-LABEL 06a_CreateOpenIdConfigManager
-//.Tests OpenId folder ConfigForMockedOpenIdConnectServer.cs
 public class ConfigForMockedOpenIdConnectServer
 {
     public static IConfigurationManager<OpenIdConnectConfiguration> Create()
@@ -157,44 +131,63 @@ public class ConfigForMockedOpenIdConnectServer
 }
 
 //DEMOSNIPPETS-LABEL 06b_Mocking
-//.Tests OpenId folder ConfigForMockedOpenIdConnectServer.cs
-public class ConfigForMockedOpenIdConnectServer
+public sealed class MockingOpenIdProviderMessageHandler(
+        OpenIdConnectDiscoveryDocumentConfiguration openIdConnectDiscoveryDocumentConfiguration,
+        PemCertificate tokenSigningCertificate)
+    : HttpMessageHandler
 {
-    public static IConfigurationManager<OpenIdConnectConfiguration> Create()
-    {
-        var openIdHttpClient = new HttpClient(
-            new MockingOpenIdProviderMessageHandler(Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration, Consts.ValidSigningCertificate));
+    private readonly OpenIdConnectDiscoveryDocumentConfiguration _openIdConnectDiscoveryDocumentConfiguration = openIdConnectDiscoveryDocumentConfiguration ?? throw new ArgumentNullException(nameof(openIdConnectDiscoveryDocumentConfiguration));
+    private readonly PemCertificate _tokenSigningCertificate = tokenSigningCertificate ?? throw new ArgumentNullException(nameof(tokenSigningCertificate));
 
-        return new ConfigurationManager<OpenIdConnectConfiguration>(
-            Consts.WellKnownOpenIdConfiguration, new OpenIdConnectConfigurationRetriever(),
-            new HttpDocumentRetriever(openIdHttpClient));
+    protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        return SendAsync(request, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+        if (request.RequestUri == null) throw new ArgumentNullException(nameof(request.RequestUri));
+
+        if (request.RequestUri.AbsoluteUri.Contains(Consts.WellKnownOpenIdConfiguration))
+            return await GetOpenIdConfigurationHttpResponseMessage();
+
+        if (request.RequestUri.AbsoluteUri.Equals(_openIdConnectDiscoveryDocumentConfiguration.JwksUri))
+            return await GetJwksHttpResonseMessage();
+
+        throw new NotSupportedException("I only support mocking jwks.json and openid-configuration");
+    }
+
+    private Task<HttpResponseMessage> GetOpenIdConfigurationHttpResponseMessage()
+    {
+        var httpResponseMessage = new HttpResponseMessage();
+        httpResponseMessage.StatusCode = HttpStatusCode.OK;
+        httpResponseMessage.Content = JsonContent.Create(_openIdConnectDiscoveryDocumentConfiguration, MediaTypeHeaderValue.Parse("application/json"));
+        return Task.FromResult(httpResponseMessage);
+    }
+
+    private Task<HttpResponseMessage> GetJwksHttpResonseMessage()
+    {
+        var httpResponseMessage = new HttpResponseMessage();
+        var jwksCertificate = _tokenSigningCertificate.ToJwksCertificate();
+        httpResponseMessage.Content = JsonContent.Create(jwksCertificate, MediaTypeHeaderValue.Parse("application/json"));
+        httpResponseMessage.StatusCode = HttpStatusCode.OK;
+        return Task.FromResult(httpResponseMessage);
+    }
 }
 
 
-
 //DEMOSNIPPETS-LABEL 07_ConstAddition
-//.Tests Consts.cs
 public static string WellKnownOpenIdConfiguration { get; set; } = "https://i.do.not.exist/.well-known/openid-configuration";
 public static OpenIdConnectDiscoveryDocumentConfiguration ValidOpenIdConnectDiscoveryDocumentConfiguration { get; } = OpenIdConnectDiscoveryDocumentConfigurationFactory.Create(Consts.ValidIssuer);
-
-//DEMOSNIPPETS-LABEL 08_DefineConfiguration
-//ServerSetupFixture.cs
-configuration.AddInMemoryCollection(new[]
-{
-    new KeyValuePair<string, string?>("Jwt:Issuer", Consts.ValidIssuer),
-    new KeyValuePair<string, string?>("Jwt:Audience", Consts.ValidAudience)
-});
 
 //DEMOSNIPPETS-LABEL 09_AuthorizeBelgium
 //.App Weatherforecastcontroller.cs
 [Authorize(Policy = "OnlyBelgium")]
 //DEMOSNIPPETS-LABEL 10_AuathorizeGetOperation
-//.App Weatherforecastcontroller.cs
 [Authorize(Policy = "WeatherForecast:Get")]
 //DEMOSNIPPETS-LABEL 11_ProgramAddAuthorization
-//.App Program.cs
 builder.Services.AddAuthorization(authorizationOptions =>
 {
 
@@ -210,15 +203,13 @@ builder.Services.AddAuthorization(authorizationOptions =>
     });
 });
 //DEMOSNIPPETS-LABEL 12_ContstsAdditionalData
-//.Tests Consts.cs
 public const string ScopeClaimType = "scope";
 public const string ScopeClaimValidValue = "weatherforecast:read";
 
 public const string CountryClaimType = "country";
 public const string CountryClaimValidValue = "Belgium";
 //DEMOSNIPPETS-LABEL 13_AddClaimsToToken
-//.Tests AccessTokenParameters.cs
-new(Consts.ScopeClaimType, Consts.ScopeClaimValidValue),
+,new(Consts.ScopeClaimType, Consts.ScopeClaimValidValue),
 new(Consts.CountryClaimType,
     Consts.CountryClaimValidValue)
 

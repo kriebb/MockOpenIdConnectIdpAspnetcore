@@ -9,7 +9,8 @@ namespace WeatherApp.WeatherManagement.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize]
+//Demo 2 INSERT BELOW
+[Authorize(Policy = "OnlyBelgium")]
 public class WeatherForecastController(ISystemClock systemClock) : ControllerBase
 {
     private readonly ISystemClock _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
@@ -28,7 +29,8 @@ public class WeatherForecastController(ISystemClock systemClock) : ControllerBas
 
 
     [HttpGet()]
-    [Authorize]
+    //Demo 2 REPLACE BELOW
+    [Authorize(Policy = "WeatherForecast:Get")]
     public WeatherForecast Get()
     {
         // Generate random bytes from the RandomNumberGenerator
