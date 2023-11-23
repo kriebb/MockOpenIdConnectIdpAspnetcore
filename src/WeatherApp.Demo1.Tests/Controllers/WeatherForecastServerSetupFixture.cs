@@ -12,7 +12,7 @@ using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
@@ -46,7 +46,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        /***DEMO2*/
+                        /***DEMO5*/
                         options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
                         /****/
                         options.IncludeErrorDetails = true;
