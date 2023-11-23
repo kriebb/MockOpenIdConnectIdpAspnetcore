@@ -47,20 +47,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 //DEMO2 INSERT BELOW
-builder.Services.AddAuthorization(authorizationOptions =>
-{
 
-    authorizationOptions.AddPolicy("OnlyBelgium", policy =>
-    {
-        policy.RequireClaim("country", "Belgium");
-
-    });
-
-    authorizationOptions.AddPolicy("WeatherForecast:Get", policy =>
-    {
-        policy.RequireClaim("scope", "weatherforecast:read");
-    });
-});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
