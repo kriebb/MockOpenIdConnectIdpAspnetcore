@@ -1,8 +1,8 @@
-0.Add an url of the real IDP in the appsettings
-1.Override it in the Servesetup fixture, the address it needs to listen to.
-2.Override the JWKS uri as well in the CONSTS and in the OpenIdConfiguration
-2.Lets use wiremock.net and specify the host.
-3.Override CreateHost in the serversetupfixture.
-4.Setup the two calls
-5.Run the test with the invalid country
-6.Watch Fiddler and see what happens
+- 0.Add an url of the real IDP in the appsettings
+- 1.Override it in the Servesetup fixture, the address it needs to listen to.
+- 2.Override the JWKS uri as well in the CONSTS and in the OpenIdConfiguration
+- 2.Lets use wiremock.net and specify the host.
+- 3.Override CreateHost in the serversetupfixture.
+- 4.Setup the two calls
+- 5.Run the test with the invalid country
+- 6.Watch Fiddler and see what happens
