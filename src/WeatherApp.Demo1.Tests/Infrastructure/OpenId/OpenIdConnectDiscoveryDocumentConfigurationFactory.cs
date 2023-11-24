@@ -1,4 +1,4 @@
-namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+namespace WeatherApp.Demo.Tests.Infrastructure.OpenId;
 
 public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
 {
@@ -12,7 +12,7 @@ public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
             DeviceAuthorizationEndpoint: "http://i.do.not.exist/oauth/device/code",
             UserinfoEndpoint: "https://i.do.not.exist/userinfo",
             MfaChallengeEndpoint: "https://i.do.not.exist/mfa/challenge",
-            JwksUri: "https://i.do.not.exist/.well-known/jwks.json",
+            JwksUri: "https://localhost:6666/.well-known/jwks",
             RegistrationEndpoint: "https://i.do.not.exist/oidc/register",
             RevocationEndpoint: "https://i.do.not.exist/oauth/revoke",
             ScopesSupported: new[]

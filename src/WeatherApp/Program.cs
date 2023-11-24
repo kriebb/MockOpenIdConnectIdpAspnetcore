@@ -31,7 +31,8 @@ builder.Services.AddAuthentication(options =>
     
 })//DEMO2 REPLACE BELOW
     .AddJwtBearer(o =>
-{
+    {
+        o.MetadataAddress = builder.Configuration["Jwt:MetadataAddress"];
     o.MapInboundClaims = false;
     o.TokenValidationParameters = new TokenValidationParameters
     {

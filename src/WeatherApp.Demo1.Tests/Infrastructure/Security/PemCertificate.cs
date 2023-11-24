@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.Security;
+namespace WeatherApp.Demo.Tests.Infrastructure.Security;
 
 public sealed record PemCertificate(string Certificate, string PrivateKey, string PublicKey)
 {

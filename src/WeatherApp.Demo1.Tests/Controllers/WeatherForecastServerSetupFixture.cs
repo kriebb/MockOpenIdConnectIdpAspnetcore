@@ -1,22 +1,39 @@
-﻿using MartinCostello.Logging.XUnit;
+﻿using System;
+using System.Net;
+using System.Net.Http.Json;
+using System.Reflection;
+using MartinCostello.Logging.XUnit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
-using WeatherApp.Demo2.Tests.Controllers;
-using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+using Newtonsoft.Json;
+using WeatherApp.Demo.Tests.Infrastructure.OpenId;
+using WireMock.Admin.Mappings;
+using WireMock.Admin.Requests;
+using WireMock.Logging;
+using WireMock.Matchers;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
+using WireMock.Settings;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace WeatherApp.Demo.Tests.Controllers;
 
 
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
 {
+    public WeatherForecastServerSetupFixture()
+    {
+
+
+    }
     private Func<ITestOutputHelper?> _testOutputHelper = () => null;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -26,7 +43,10 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
-
+                configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
+                {
+                    new("Jwt:MetadataAddress", "https://localhost:6666/.well-known/openid-configuration")
+                });
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -47,7 +67,6 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                     options =>
                     {
                         /***DEMO5*/
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
                         /****/
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
@@ -99,6 +118,39 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
     public void ClearOutputHelper()
     {
         _testOutputHelper = () => null;
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        HttpClient.DefaultProxy = new WebProxy(new Uri("http://localhost:8888"));
+        var wireMockServer = WireMockServer.Start(new WireMockServerSettings()
+        {
+            Urls = new[] { "https://localhost:6666" },
+            SaveUnmatchedRequests = true,
+            StartAdminInterface = true,
+
+        });
+
+        wireMockServer
+            .Given(Request.Create().WithPath("/.well-known/openid-configuration")
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyAsJson(Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration));
+
+        // Configure stub for JWKS URI
+        wireMockServer
+            .Given(Request.Create().WithPath("/.well-known/jwks").UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyAsJson(
+
+                    Consts.ValidSigningCertificate.ToJwksCertificate()));
+
+
+        return base.CreateHost(builder);
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.Security;
+namespace WeatherApp.Demo.Tests.Infrastructure.Security;
 
 public static class SelfSignedAccessTokenPemCertificateFactory
 {

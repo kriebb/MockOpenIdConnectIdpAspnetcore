@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
-using WeatherApp.Demo2.Tests.Controllers;
+using WeatherApp.Demo.Tests.Controllers;
 using Xunit.Abstractions;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.Jwt;
+namespace WeatherApp.Demo.Tests.Infrastructure.Jwt;
 //Demo 2 INSERT BELOW
 public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessTokenParameters,
         ITestOutputHelper testOutputHelper)

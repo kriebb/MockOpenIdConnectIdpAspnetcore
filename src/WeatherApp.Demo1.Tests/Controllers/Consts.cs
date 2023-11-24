@@ -1,7 +1,7 @@
-using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
-using WeatherApp.Demo2.Tests.Infrastructure.Security;
+using WeatherApp.Demo.Tests.Infrastructure.OpenId;
+using WeatherApp.Demo.Tests.Infrastructure.Security;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 public class Consts
 {
@@ -19,11 +19,10 @@ public class Consts
     public const string SubClaimValidValue = "sub-value";
 
     //Demo 2 INSERT BELOW
-    public static string WellKnownOpenIdConfiguration { get; set; } = "https://i.do.not.exist/.well-known/openid-configuration";
+    public static string WellKnownOpenIdConfiguration { get; set; } = "https://localhost:6666/.well-known/openid-configuration";
     public static OpenIdConnectDiscoveryDocumentConfiguration ValidOpenIdConnectDiscoveryDocumentConfiguration { get; } = OpenIdConnectDiscoveryDocumentConfigurationFactory.Create(Consts.ValidIssuer);
 
-    //Demo 2 INSERT BELOW
-//.Tests Consts.cs
+
 public const string ScopeClaimType = "scope";
 public const string ScopeClaimValidValue = "weatherforecast:read";
 

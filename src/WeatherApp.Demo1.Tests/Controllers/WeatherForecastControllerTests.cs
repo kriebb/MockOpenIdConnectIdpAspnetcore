@@ -1,12 +1,22 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using JsonConverter.Abstractions;
+using JsonConverter.Abstractions.Models;
 using Shouldly;
-using WeatherApp.Demo2.Tests.Infrastructure.Jwt;
+using WeatherApp.Demo.Tests.Infrastructure.Jwt;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
+using WireMock.Settings;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fixture) : IClassFixture<WeatherForecastServerSetupFixture>
 {
