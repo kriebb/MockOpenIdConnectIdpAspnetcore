@@ -4,3 +4,4 @@ using WeatherApp.Demo2.Tests.Controllers;
 
 namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
 
+//06a_CreateOpenIdConfigManager
