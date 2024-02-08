@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "RegLogExtFrontEnd.Ui.Tests": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:62221;http://localhost:62222"
+    }
+  }
+}
