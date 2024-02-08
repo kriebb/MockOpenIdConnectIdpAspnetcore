@@ -20,7 +20,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddEndpointsApiExplorer();
 
 
-builder.Services.AddHttpLogging(options => options.LoggingFields = HttpLoggingFields.Request | HttpLoggingFields.ResponseBody);
+builder.Services.AddHttpLogging(options => options.LoggingFields 
+    = HttpLoggingFields.Request | HttpLoggingFields.ResponseBody);
 
 
 builder.Services.AddAuthentication(options =>
@@ -28,25 +29,13 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    
-})//DEMO2 REPLACE BELOW
-    .AddJwtBearer(o =>
-{
-    o.MapInboundClaims = false;
-    o.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        NameClaimType = "sub",
+})
+//DEMO2 04_Program.ReplaceJwtBearer
+//DEMO2 05_SignatureValidator
 
-    };
-});
+.AddJwtBearer();
 
-//DEMO2 INSERT BELOW
+//DEMO2 11_ProgramAddAuthorization
 
 var app = builder.Build();
 

@@ -46,7 +46,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        //DEMO2 INSERT BELOW
+                        //DEMO2 06_PostConfigureBearerOptions
 
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
