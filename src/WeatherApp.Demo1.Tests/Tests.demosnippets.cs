@@ -1,4 +1,7 @@
 ﻿//DEMOSNIPPETS-TAB Demo5 Application
+//DEMOSNIPPETS-LABEL 00_SpecifyMetadataAddress
+
+o.MetadataAddress = builder.Configuration["Jwt:MetadataAddress"];
 //DEMOSNIPPETS-LABEL 01_ServerSetupFixture_CreateHostWithWireMockOIDC
 protected override IHost CreateHost(IHostBuilder builder)
 {
@@ -33,14 +36,16 @@ protected override IHost CreateHost(IHostBuilder builder)
 
     return base.CreateHost(builder);
 }
+//DEMOSNIPPETS-LABEL 02_00_Consts_WellknownOpenIdConfiguration
+public static string WellKnownOpenIdConfiguration { get; set; } = "https://i.do.not.exist/.well-known/openid-configuration";
+
+//DEMOSNIPPETS-LABEL 02_01_ServerSetupFixture_AddUrl
+configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
+{
+    new("Jwt:MetadataAddress", Consts.WellKnownOpenIdConfiguration)
+});
 
 //DEMOSNIPPETS-LABEL 03_ServerSetupFixture_RemoveConfig
 //Remove assignment
 //Remove class ConfigForMockedOpenIdConnectServer.cs
 //Remove class MockingOpenIdProviderMessageHandler.cs
-
-//DEMOSNIPPETS-LABEL 02_ServerSetupFixture_AddUrl
-configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
-{
-    new("Jwt:MetadataAddress", Consts.WellKnownOpenIdConfiguration)
-});

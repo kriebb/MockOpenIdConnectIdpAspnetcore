@@ -45,7 +45,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
-                //DEMO 02_ServerSetupFixture_AddUrl
+                //TODO 02_01_ServerSetupFixture_AddUrl
 
             })
             .ConfigureKestrel((context, options) =>
@@ -66,7 +66,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        //DEMO 03_ServerSetupFixture_RemoveConfig
+                        //TODO 03_ServerSetupFixture_RemoveConfig
                         options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
                         //
                         options.IncludeErrorDetails = true;
@@ -121,7 +121,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
         _testOutputHelper = () => null;
     }
 
-    //DEMO 01_ServerSetupFixture_CreateHostWithWireMockOIDC
+    //TODO 01_ServerSetupFixture_CreateHostWithWireMockOIDC
 
     /// <summary>
     /// Sets the <see cref="ITestOutputHelper"/> to use.
@@ -133,7 +133,8 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
     }
 
     private sealed class TestOutputHelperFuncAccessor
-        (Func<ITestOutputHelper?> testOutputHelper) : ITestOutputHelperAccessor
+        (Func<ITestOutputHelper?> testOutputHelper) 
+        : ITestOutputHelperAccessor
     {
         public ITestOutputHelper? OutputHelper
         {
