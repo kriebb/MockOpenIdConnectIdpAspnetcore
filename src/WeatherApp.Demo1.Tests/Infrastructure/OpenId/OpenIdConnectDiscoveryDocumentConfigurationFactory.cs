@@ -1,4 +1,4 @@
-namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+namespace WeatherApp.Demo.Tests.Infrastructure.OpenId;
 
 public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
 {

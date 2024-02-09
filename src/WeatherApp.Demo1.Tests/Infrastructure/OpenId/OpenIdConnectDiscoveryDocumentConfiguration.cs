@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+namespace WeatherApp.Demo.Tests.Infrastructure.OpenId;
 
 public record OpenIdConnectDiscoveryDocumentConfiguration(
     [property: JsonPropertyName("issuer")] string Issuer, 

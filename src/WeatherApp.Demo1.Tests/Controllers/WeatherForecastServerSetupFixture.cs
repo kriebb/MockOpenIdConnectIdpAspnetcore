@@ -3,16 +3,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
-using WeatherApp.Demo2.Tests.Controllers;
-using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+using WeatherApp.Demo.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>

@@ -1,8 +1,8 @@
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using WeatherApp.Demo2.Tests.Controllers;
+using WeatherApp.Demo.Tests.Controllers;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+namespace WeatherApp.Demo.Tests.Infrastructure.OpenId;
 public class ConfigForMockedOpenIdConnectServer
 {
     public static IConfigurationManager<OpenIdConnectConfiguration> Create()

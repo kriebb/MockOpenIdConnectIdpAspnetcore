@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Internal;
 using WeatherApp.WeatherManagement.Controllers.Models;
-using WeatherApp.WeatherManagement.Services.OpenMeteo.Models;
 
 namespace WeatherApp.WeatherManagement.Controllers;
 

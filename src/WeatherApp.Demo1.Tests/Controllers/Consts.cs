@@ -1,7 +1,7 @@
-using WeatherApp.Demo2.Tests.Infrastructure.OpenId;
-using WeatherApp.Demo2.Tests.Infrastructure.Security;
+using WeatherApp.Demo.Tests.Infrastructure.OpenId;
+using WeatherApp.Demo.Tests.Infrastructure.Security;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 public class Consts
 {

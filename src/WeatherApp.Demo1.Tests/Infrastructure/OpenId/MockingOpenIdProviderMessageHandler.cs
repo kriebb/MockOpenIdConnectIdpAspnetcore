@@ -1,10 +1,10 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using WeatherApp.Demo2.Tests.Controllers;
-using WeatherApp.Demo2.Tests.Infrastructure.Security;
+using WeatherApp.Demo.Tests.Controllers;
+using WeatherApp.Demo.Tests.Infrastructure.Security;
 
-namespace WeatherApp.Demo2.Tests.Infrastructure.OpenId;
+namespace WeatherApp.Demo.Tests.Infrastructure.OpenId;
 public sealed class MockingOpenIdProviderMessageHandler(
         OpenIdConnectDiscoveryDocumentConfiguration openIdConnectDiscoveryDocumentConfiguration,
         PemCertificate tokenSigningCertificate)

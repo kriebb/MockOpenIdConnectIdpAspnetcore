@@ -2,11 +2,11 @@
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using Shouldly;
-using WeatherApp.Demo2.Tests.Infrastructure.Jwt;
+using WeatherApp.Demo.Tests.Infrastructure.Jwt;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WeatherApp.Demo2.Tests.Controllers;
+namespace WeatherApp.Demo.Tests.Controllers;
 
 public class WeatherForecastControllerTests(WeatherForecastServerSetupFixture fixture) : IClassFixture<WeatherForecastServerSetupFixture>
 {
@@ -71,5 +71,6 @@ public record AccessTokenParameters
     };
 
     //INSERT DEMO4 02_AccessTokenSupportChangeClaim
+
 }
 
