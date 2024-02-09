@@ -5,7 +5,7 @@ public async Task WhenWeGetWeatherForecast_WithAccessToken_InvalidIssuer_ShouldR
 {
     var accessTokenParameters = new AccessTokenParameters()
     {
-        Issuer = InvalidIssuer
+        Issuer = "InvalidIssuer"
     };
     var httpClient = _fixture.CreateDefaultClient(new JwtBearerCustomAccessTokenHandler(accessTokenParameters, _testOutputHelper));
     var response = await httpClient.GetAsync($"/WeatherForecast/");
