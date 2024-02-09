@@ -12,7 +12,7 @@ using Xunit.Sdk;
 
 namespace WeatherApp.Demo1.Tests.Controllers;
 
-
+//TODO: 01_a_Explain_WebApplicationFactory
 public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
 {
     private Func<ITestOutputHelper?> _testOutputHelper = () => null;
@@ -24,6 +24,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
+                //TODO: 05_Explain Override the configuration
                 configuration.AddJsonFile("appsettings.json");
                 configuration.AddJsonFile("appsettings.Development.json");
             })
@@ -41,7 +42,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             })
             .ConfigureTestServices(services =>
             {
-
+                //TODO: 06_Explain PostConfigure because of delayed execution of webapplicationfactory
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {

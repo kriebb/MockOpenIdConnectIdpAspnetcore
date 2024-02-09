@@ -9,6 +9,7 @@ namespace WeatherApp.WeatherManagement.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+//TODO: 02_Explain Authorize and ref to presentation
 [Authorize]
 public class WeatherForecastController(ISystemClock systemClock) : ControllerBase
 {
@@ -28,6 +29,7 @@ public class WeatherForecastController(ISystemClock systemClock) : ControllerBas
 
 
     [HttpGet()]
+    //TODO: 03_Explain Authorize and ref to presentation
     [Authorize]
 
     public WeatherForecast Get()
