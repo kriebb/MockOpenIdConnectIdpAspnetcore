@@ -30,12 +30,12 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-//DEMO2 04_Program.ReplaceJwtBearer
-//DEMO2 05_SignatureValidator
+//TODO: 04_Program.ReplaceJwtBearer
+//TODO: 05_SignatureValidator
 
 .AddJwtBearer();
 
-//DEMO2 11_ProgramAddAuthorization
+//TODO: 11_ProgramAddAuthorization
 
 var app = builder.Build();
 

@@ -20,7 +20,7 @@ public record AccessTokenParameters
 
     };
 }
-//DEMOSNIPPETS-LABEL 02a_AccessTokenHandler
+//DEMOSNIPPETS-LABEL 02_a_AccessTokenHandler
 public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessTokenParameters,
         ITestOutputHelper testOutputHelper)
     : DelegatingHandler
@@ -49,7 +49,7 @@ public class JwtBearerCustomAccessTokenHandler(AccessTokenParameters accessToken
     }
 }
 
-//DEMOSNIPPETS-LABEL 02b_AccessTokenFactory
+//DEMOSNIPPETS-LABEL 02_b_AccessTokenFactory
 public class JwtBearerAccessTokenFactory
 {
     public static string Create(AccessTokenParameters accessTokenParameters)
@@ -111,11 +111,11 @@ SignatureValidator = (token, parameters) => new JsonWebToken(token)
     "Audience": "Audience:Dotnet:WeatherApp:Project",
     "Issuer": "Issuer:Dotnet:WeatherApp:Tests:Project"
 }
-//DEMOSNIPPETS-LABEL 06_PostConfigureJwtBearerOptions
+//DEMOSNIPPETS-LABEL 06_0_PostConfigureJwtBearerOptions
 
 options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
 
-//DEMOSNIPPETS-LABEL 06a_CreateOpenIdConfigManager
+//DEMOSNIPPETS-LABEL 06_a_CreateOpenIdConfigManager
 public class ConfigForMockedOpenIdConnectServer
 {
     public static IConfigurationManager<OpenIdConnectConfiguration> Create()
@@ -130,7 +130,7 @@ public class ConfigForMockedOpenIdConnectServer
 
 }
 
-//DEMOSNIPPETS-LABEL 06b_Mocking
+//DEMOSNIPPETS-LABEL 06_b_Mocking
 public sealed class MockingOpenIdProviderMessageHandler(
         OpenIdConnectDiscoveryDocumentConfiguration openIdConnectDiscoveryDocumentConfiguration,
         PemCertificate tokenSigningCertificate)
@@ -185,7 +185,7 @@ public static OpenIdConnectDiscoveryDocumentConfiguration ValidOpenIdConnectDisc
 //DEMOSNIPPETS-LABEL 09_AuthorizeBelgium
 //.App Weatherforecastcontroller.cs
 [Authorize(Policy = "OnlyBelgium")]
-//DEMOSNIPPETS-LABEL 10_AuathorizeGetOperation
+//DEMOSNIPPETS-LABEL 10_AuthorizeGetOperation
 [Authorize(Policy = "WeatherForecast:Get")]
 //DEMOSNIPPETS-LABEL 11_ProgramAddAuthorization
 builder.Services.AddAuthorization(authorizationOptions =>

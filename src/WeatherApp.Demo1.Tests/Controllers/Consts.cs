@@ -11,11 +11,11 @@ public class Consts
 
     public static readonly Uri BaseAddress = new($"https://localhost:{BaseAddressPort}");
 
-    //Demo 2 03_Const_Basic_addition
+    //TODO: 03_Const_Basic_addition
 
-    //Demo 2 07_ConstAddition
+    //TODO: 07_ConstAddition
 
-    //Demo 2 13_AddClaimsToToken
+    //TODO: 13_AddClaimsToToken
 
 }
 
