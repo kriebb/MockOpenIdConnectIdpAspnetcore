@@ -29,7 +29,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     
-})//DEMO2 REPLACE BELOW
+})
     .AddJwtBearer(o =>
 {
     o.MapInboundClaims = false;
@@ -46,7 +46,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-//DEMO2 INSERT BELOW
 builder.Services.AddAuthorization(authorizationOptions =>
 {
 
