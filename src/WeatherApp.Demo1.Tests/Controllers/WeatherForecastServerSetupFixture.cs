@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Newtonsoft.Json;
 using WeatherApp.Demo.Tests.Infrastructure.OpenId;
 using WireMock.Admin.Mappings;
@@ -43,10 +45,8 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
-                configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
-                {
-                    new("Jwt:MetadataAddress", "https://localhost:6666/.well-known/openid-configuration")
-                });
+                //DEMO 02_ServerSetupFixture_AddUrl
+
             })
             .ConfigureKestrel((context, options) =>
                 {
@@ -66,8 +66,9 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        /***DEMO5*/
-                        /****/
+                        //DEMO 03_ServerSetupFixture_RemoveConfig
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+                        //
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {
@@ -120,38 +121,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
         _testOutputHelper = () => null;
     }
 
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
-        HttpClient.DefaultProxy = new WebProxy(new Uri("http://localhost:8888"));
-        var wireMockServer = WireMockServer.Start(new WireMockServerSettings()
-        {
-            Urls = new[] { "https://localhost:6666" },
-            SaveUnmatchedRequests = true,
-            StartAdminInterface = true,
-
-        });
-
-        wireMockServer
-            .Given(Request.Create().WithPath("/.well-known/openid-configuration")
-                .UsingGet())
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/json")
-                .WithBodyAsJson(Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration));
-
-        // Configure stub for JWKS URI
-        wireMockServer
-            .Given(Request.Create().WithPath("/.well-known/jwks").UsingGet())
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/json")
-                .WithBodyAsJson(
-
-                    Consts.ValidSigningCertificate.ToJwksCertificate()));
-
-
-        return base.CreateHost(builder);
-    }
+    //DEMO 01_ServerSetupFixture_CreateHostWithWireMockOIDC
 
     /// <summary>
     /// Sets the <see cref="ITestOutputHelper"/> to use.

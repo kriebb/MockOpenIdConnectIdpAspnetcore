@@ -1,25 +1,46 @@
-﻿//DEMOSNIPPETS-TAB Demo4 Application
-//DEMOSNIPPETS-LABEL 01_Test4
-[Fact()]
-public async Task WhenWeGetWeatherForecast_WithAccessToken_InvalidClaim_ShouldReturn403()
+﻿//DEMOSNIPPETS-TAB Demo5 Application
+//DEMOSNIPPETS-LABEL 01_ServerSetupFixture_CreateHostWithWireMockOIDC
+protected override IHost CreateHost(IHostBuilder builder)
 {
-    var accessTokenParameters = new AccessTokenParameters();
-    accessTokenParameters.AddOrReplaceClaim(CountryClaimType, CountryClaimInvalidValue);
-    var httpClient = _fixture.CreateDefaultClient(new JwtBearerCustomAccessTokenHandler(accessTokenParameters, _testOutputHelper));
-    var response = await httpClient.GetAsync($"/WeatherForecast/");
-    response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+
+    //HttpClient.DefaultProxy = new WebProxy(new Uri("http://localhost:8888"));
+    var wireMockServer = WireMockServer.Start(new WireMockServerSettings()
+    {
+        Urls = new[] { "https://localhost:6666" },
+        SaveUnmatchedRequests = true,
+        StartAdminInterface = true,
+
+    });
+
+    wireMockServer
+        .Given(Request.Create().WithPath("/.well-known/openid-configuration")
+            .UsingGet())
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithHeader("Content-Type", "application/json")
+            .WithBodyAsJson(Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration));
+
+    // Configure stub for JWKS URI
+    wireMockServer
+        .Given(Request.Create().WithPath("/.well-known/jwks").UsingGet())
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithHeader("Content-Type", "application/json")
+            .WithBodyAsJson(
+
+                Consts.ValidSigningCertificate.ToJwksCertificate()));
+
+
+    return base.CreateHost(builder);
 }
-//DEMOSNIPPETS-LABEL 02_AccessTokenSupportChangeClaim
-public void AddOrReplaceClaim(string claimType, string claimValue)
+
+//DEMOSNIPPETS-LABEL 03_ServerSetupFixture_RemoveConfig
+//Remove assignment
+//Remove class ConfigForMockedOpenIdConnectServer.cs
+//Remove class MockingOpenIdProviderMessageHandler.cs
+
+//DEMOSNIPPETS-LABEL 02_ServerSetupFixture_AddUrl
+configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
 {
-    var claim = Claims?.FirstOrDefault(x => x.Type == claimType);
-    if (claim != null)
-        Claims?.Remove(claim);
-
-    Claims ??= new List<Claim>();
-    Claims.Add(new Claim(claimType, claimValue));
-}
-
-//DEMOSNIPPETS-LABEL 03_AddInvalidDataInTestsClass
-private const string CountryClaimType = "country";
-private const string CountryClaimInvalidValue = "France";
+    new("Jwt:MetadataAddress", Consts.WellKnownOpenIdConfiguration)
+});
