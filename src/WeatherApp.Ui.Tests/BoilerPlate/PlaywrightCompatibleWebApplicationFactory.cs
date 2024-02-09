@@ -132,7 +132,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
         }
     }
     /// <summary>
-    /// Hack to ensure we can use the deferred way of capturing the program.cs Webhostbuilder without refactoring program.cs
+    /// CreateHost to ensure we can use the deferred way of capturing the program.cs Webhostbuilder without refactoring program.cs
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
@@ -270,7 +270,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
             .ForAudience(TestAuthorisationConstants.Audience)
             .IssuedBy(TestAuthorisationConstants.Issuer)
             .WithClaim("scope", scope)
-            .WithClaim("axauid", "axauid_"+userId)
+            .WithClaim("uid", "uid_"+userId)
             .WithClaim("member_of", JsonConvert.SerializeObject(new []{"test 1", "test 2","Customer User Admin" }))
 
             .WithSigningCertificate(
@@ -289,7 +289,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
             .ForAudience(TestAuthorisationConstants.Audience)
             .IssuedBy(TestAuthorisationConstants.Issuer)
             .WithClaim("nonce", nonce)
-            .WithClaim("axauid", "axauid_"+userId)
+            .WithClaim("uid", "uid_"+userId)
 
             .WithClaim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
             // Include other necessary OpenID Connect claims
