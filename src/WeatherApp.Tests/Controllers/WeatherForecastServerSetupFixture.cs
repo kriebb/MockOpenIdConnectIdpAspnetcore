@@ -1,4 +1,5 @@
-﻿using MartinCostello.Logging.XUnit;
+﻿using System.Collections.Specialized;
+using MartinCostello.Logging.XUnit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
+using WeatherApp.Tests.Controllers.Models;
+using WeatherApp.Tests.Infrastructure.Jwt;
 using WeatherApp.Tests.Infrastructure.OpenId;
 using Xunit.Abstractions;
 
@@ -18,11 +21,26 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 {
     private Func<ITestOutputHelper?> _testoutputhelper = () => null;
 
+
+    public (string AccessToken, string IDToken, string RefreshToken) TokenFactoryFunc(
+        (NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery) arg)
+    {
+        var accessToken = JwtBearerAccessTokenFactory.Create(new AccessTokenParameters());
+        var idToken = JwtBearerAccessTokenFactory.Create(new IdTokenParameters(
+            sub: arg.AuthorizationCodeRequestQuery[""]!,
+            nonce: arg.AuthorizationCodeRequestQuery["nonce"]!,
+            scopes: arg.AuthorizationCodeRequestQuery["scope"]!));
+        var refreshToken = JwtBearerAccessTokenFactory.CreateRefreshToken();
+        return (accessToken, idToken, refreshToken);
+    }
+
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         IdentityModelEventSource.ShowPII = true;
 
 
+        
         builder.ConfigureAppConfiguration((context, configuration) =>
             {
                 configuration.AddJsonFile("appsettings.json");
@@ -47,12 +65,10 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
             })
             .ConfigureTestServices(services =>
             {
- 
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
-                    { 
-
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create();
+                    {
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(TokenFactoryFunc);
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {
@@ -87,6 +103,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                     });
             });
     }
+
 
     /// <summary>
     /// Clears the current <see cref="ITestOutputHelper"/>.

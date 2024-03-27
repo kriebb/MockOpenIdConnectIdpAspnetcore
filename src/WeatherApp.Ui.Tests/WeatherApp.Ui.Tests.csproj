@@ -9,6 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="SearchTests\**" />
+      <Content Remove="SearchTests\**" />
+      <EmbeddedResource Remove="SearchTests\**" />
+      <None Remove="SearchTests\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.38.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.16" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.1" />
@@ -62,13 +69,7 @@
       <EmbeddedResource Include="Assets\private-key-traditional.pem">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
-      <Content Remove="SearchTests\Assets\Mappings\GET provisioning_users.json" />
-      <Content Remove="SearchTests\Assets\Mappings\GET provisioning_applications.json" />
       <Content Remove="HomeTests\Assets\GET provisioning_applications.json" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="SearchTests\Assets\Mappings\" />
     </ItemGroup>
 
 </Project>
