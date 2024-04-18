@@ -8,23 +8,23 @@ using WeatherApp.Tests.Controllers.Models;
 
 namespace WeatherApp.Tests.Infrastructure.Jwt;
 
-public class JwtBearerAccessTokenFactory
+public static class JwtBearerAccessTokenFactory
 {
-    public static string Create(AccessTokenParameters accessTokenParameters)
+    public static string Create(TokenParameters tokenParameters)
     {
-        var signingCredentials = new SigningCredentials(new X509SecurityKey(accessTokenParameters.SigningCertificate),
+        var signingCredentials = new SigningCredentials(new X509SecurityKey(tokenParameters.SigningCertificate),
             SecurityAlgorithms.RsaSha256);
 
         var notBefore = DateTime.UtcNow;
         var expires = DateTime.UtcNow.AddHours(1);
 
 
-        var identity = new ClaimsIdentity(accessTokenParameters.Claims);
+        var identity = new ClaimsIdentity(tokenParameters.Claims);
 
         var securityTokenDescriptor = new SecurityTokenDescriptor
         {
-            Audience = accessTokenParameters.Audience,
-            Issuer = accessTokenParameters.Issuer,
+            Audience = tokenParameters.Audience,
+            Issuer = tokenParameters.Issuer,
             NotBefore = notBefore,
             Expires = expires,
             SigningCredentials = signingCredentials,
