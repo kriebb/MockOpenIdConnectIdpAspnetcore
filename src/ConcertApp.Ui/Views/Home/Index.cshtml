@@ -1,0 +1,45 @@
+﻿@model ConcertApp.Ui.Models.IndexViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome @Model.Username!</h1>
+    <p>This page displays claims and user information from your Microsoft account.</p>
+
+    @if(Model.IsAuthenticated)
+    {
+        <div>
+            <h4>Identity Information</h4>
+            <ul>
+                <li><strong>Name:</strong> @Model.Username</li>
+                <li><strong>Authentication Type:</strong> @Model.AuthenticationType</li>
+                <li><strong>Is Authenticated:</strong> @Model.IsAuthenticated</li>
+            </ul>
+
+            <h4>Claims</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var claim in Model.Claims)
+                {
+                    <tr>
+                        <td>@claim.Type</td>
+                        <td>@claim.Value</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p>Please log in to view your identity information.</p>
+    }
+</div>
