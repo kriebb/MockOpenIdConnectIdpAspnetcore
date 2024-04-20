@@ -1,6 +1,8 @@
+using System.Collections;
+
 namespace ConcertApp.Ui.Models;
 
-public record IndexViewModel(
+public record ManageAccountViewModel(
     bool IsAuthenticated,
     string? Username,
     string? AuthenticationType,

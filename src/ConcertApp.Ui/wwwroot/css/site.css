@@ -1,22 +1,150 @@
-html {
-  font-size: 14px;
+/* Base Styles */
+html, body {
+  font-family: 'Lato', sans-serif;
+  background-color: #f7f7fa; /* softer light gray */
+  color: #444; /* softer dark gray */
+  margin: 0;
+  padding: 0;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: #444;
+  font-weight: 300;
+}
+
+/* Navigation Bar */
+.navbar {
+  background-color: #ffffff;
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.navbar-nav {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  margin-right: 20px;
+}
+
+.navbar-nav .nav-item {
+  font-size: 16px;
+  margin: 0 10px; /* Uniform spacing */
+}
+
+.nav-link {
+  transition: color 0.3s ease-in-out;
+  color: #4a90e2; /* Soft blue for all links */
+  text-decoration: none;
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.nav-link:hover {
+  color: #178a40; /* deeper green */
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn, .btn-primary {
+  background-color: #1DB954; /* soft green */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  text-align: center;
+  display: inline-block;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.btn:hover, .btn-primary:hover {
+  background-color: #178a40; /* darker green */
+}
+
+.btn-style {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #333; /* Dark text color for better contrast on lighter backgrounds */
+  cursor: pointer;
+}
+
+.btn-style:hover {
+  color: #1DB954; /* Soft green color when hovered */
+  text-decoration: underline;
+}
+
+/* Cards */
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.10);
+  margin-top: 20px;
+  padding: 40px;
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 20px;
+}
+
+.card-text {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+/* Jumbotron */
+.jumbotron {
+  background-color: #e9ecef; /* very light blue */
+  color: #444;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.jumbotron h1 {
+  font-size: 36px;
+}
+
+.jumbotron p {
+  font-size: 18px;
+  margin-bottom: 25px;
+}
+
+/* Footer */
+.footer {
+  padding: 20px 0;
+  background-color: #2d323e; /* soft dark blue */
+  color: white;
+  text-align: center;
+  border-top: 4px solid #1DB954; /* soft green */
+}
+
+/* Utilities */
+.text-dark {
+  color: #444;
+}
+
+/* Responsive Handling */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
   }
-}
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
+  .nav-item {
+    margin-bottom: 10px;
+  }
 }

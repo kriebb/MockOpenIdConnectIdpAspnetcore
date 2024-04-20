@@ -1,0 +1,33 @@
+@model ConcertApp.Ui.Models.BuyTicketsViewModel
+
+    @{
+    ViewData["Title"] = "Buy Tickets";
+}
+
+<div class="container">
+    <h1 class="text-center">Available Concerts</h1>
+
+    @if (Model.Concerts.Any())
+{
+    <div class="row">
+        @foreach (var concert in Model.Concerts)
+    {
+        <div class="col-md-4">
+            <div class="card mb-4">
+            <img class="card-img-top" src="@concert.ImageUrl" alt="Concert image">
+            <div class="card-body">
+            <h5 class="card-title">@concert.Name</h5>
+            <p class="card-text">@concert.Description</p>
+            <p class="card-text">Price: @concert.Price.ToString("C")</p>
+            <a asp-controller="Tickets" asp-action="Buy" asp-route-id="@concert.Id" class="btn btn-primary">Buy Ticket</a>
+            </div>
+            </div>
+            </div>
+    }
+    </div>
+}
+else
+{
+    <p>No concerts available at the moment. Check back later!</p>
+}
+</div>

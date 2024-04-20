@@ -1,12 +1,11 @@
 using ConcertApp.Ui;
-using Microsoft.AspNetCore.Authentication;
+using ConcertApp.Ui.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddDebug();
@@ -60,6 +59,7 @@ builder.Services.AddControllersWithViews(options =>
     
     var policy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
+        
         .Build();
     options.Filters.Add(new AuthorizeFilter(policy));
 });
@@ -93,14 +93,6 @@ app.MapControllerRoute(
 app.MapRazorPages();
 
 app.Run();
-
-public class MicrosoftSignInManager:SignInManager<IdentityUser>
-{
-    public MicrosoftSignInManager(UserManager<IdentityUser> userManager, IHttpContextAccessor contextAccessor, IUserClaimsPrincipalFactory<IdentityUser> claimsFactory, IOptions<IdentityOptions> optionsAccessor, ILogger<SignInManager<IdentityUser>> logger, IAuthenticationSchemeProvider schemes, IUserConfirmation<IdentityUser> confirmation) : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes, confirmation)
-    {
-        AuthenticationScheme = MicrosoftAccountDefaults.AuthenticationScheme;
-    }
-}
 
 namespace ConcertApp.Ui
 {

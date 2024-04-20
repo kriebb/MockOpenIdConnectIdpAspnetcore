@@ -1,25 +1,24 @@
 using System.Diagnostics;
 using ConcertApp.Ui.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConcertApp.Ui.Controllers;
 
 
-public class HomeController : Controller
+public class ConcertController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly ILogger<ConcertController> _logger;
 
-    public HomeController(ILogger<HomeController> logger)
+    public ConcertController(ILogger<ConcertController> logger)
     {
         _logger = logger;
     }
 
-    [AllowAnonymous] // This attribute allows unauthenticated users to access the Index action
     public IActionResult Index()
     {
+        var model = new ConvertViewModel(new List<ConvertViewModel.ConcertItem>());
 
-        return View();    
+        return View(model);    
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

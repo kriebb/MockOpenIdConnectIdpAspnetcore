@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Identity;
 
-namespace ConcertApp.Ui;
+namespace ConcertApp.Ui.Infrastructure;
 
 public class InMemoryUserStore : IUserStore<IdentityUser>
 {

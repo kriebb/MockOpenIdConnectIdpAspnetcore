@@ -1,0 +1,28 @@
+@model ConcertApp.Ui.Models.ConvertViewModel
+<div class="container">
+    <h1 class="text-center">Upcoming Concerts</h1>
+
+    @if (Model.Concerts.Any())
+    {
+        <div class="row">
+            @foreach (var concert in Model.Concerts)
+            {
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <img class="card-img-top" src="@concert.ImageUrl" alt="Concert image">
+                        <div class="card-body">
+                            <h5 class="card-title">@concert.Name</h5>
+                            <p class="card-text">@concert.Description</p>
+                            <p class="card-text"><small class="text-muted">@concert.Date.ToString("MMMM dd, yyyy")</small></p>
+                            <a asp-area="Identity" asp-page="/Concerts/Tickets/Index" asp-route-concertId="@concert.Id" class="btn btn-primary">Buy Ticket</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>No upcoming concerts at the moment. Check back later!</p>
+    }
+</div>
