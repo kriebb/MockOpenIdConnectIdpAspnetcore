@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using ConcertApp.Tests.Controllers.Models;
 using Microsoft.IdentityModel.Tokens;
+using OIdcMockingInfrastructure.Models;
 
-namespace ConcertApp.Tests.Infrastructure.Jwt;
+namespace OIdcMockingInfrastructure.Jwt;
 
 public static class JwtBearerAccessTokenFactory
 {

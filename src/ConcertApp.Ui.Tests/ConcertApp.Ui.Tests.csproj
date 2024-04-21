@@ -46,31 +46,10 @@
 
     <ItemGroup>
       <None Remove="Assets\AspnetDevServer\localhost.key" />
-      <EmbeddedResource Include="Assets\AspnetDevServer\localhost.key">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <None Remove="Assets\AspnetDevServer\localhost.pem" />
-      <EmbeddedResource Include="Assets\AspnetDevServer\localhost.pem">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <None Remove="Assets\AspnetDevServer\localhost.pfx" />
-      <EmbeddedResource Include="Assets\oidc-openid-config.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <None Remove="Assets\openssl_crt.pem" />
-      <EmbeddedResource Include="Assets\openssl_crt.pem">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="Assets\oidc-authorizationcode.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="Assets\oidc-wellknown-keys.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <None Remove="Assets\private-key-traditional.pem" />
-      <EmbeddedResource Include="Assets\private-key-traditional.pem">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <Content Remove="HomeTests\Assets\GET provisioning_applications.json" />
     </ItemGroup>
 

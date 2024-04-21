@@ -7,15 +7,15 @@ namespace ConcertApp.WeatherManagement.Controllers;
 [ApiController]
 [Authorize(Policy = "OnlyBelgium")]
 [Route("api/[controller]")]
-public class ConcertAppController : ControllerBase
+public class ConcertController : ControllerBase
 {
     // Constructor and other dependencies would be injected here
 
-    public ConcertAppController()
+    public ConcertController()
     {
     }
 
-    // GET api/concertapp/availability
+    // GET api/concert/availability
     [HttpGet("availability")]
     public IActionResult CheckAvailability()
     {
@@ -23,8 +23,8 @@ public class ConcertAppController : ControllerBase
         // This could be non-protected if you just want to show available seats without booking
         return Ok("Seats available: 100");
     }
-
-    // POST api/concertapp/buy
+    
+    // POST api/concert/buy
     [HttpPost("buy")]
     [Authorize(Policy = "LoggedInCustomer")] // Protect this endpoint so that only authenticated users can access it
     public IActionResult BuyTicket([FromBody] TicketPurchase purchase)

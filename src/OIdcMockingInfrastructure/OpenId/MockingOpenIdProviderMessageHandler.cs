@@ -4,10 +4,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Web;
-using ConcertApp.Tests.Controllers;
-using ConcertApp.Tests.Infrastructure.Security;
+using OIdcMockingInfrastructure.Security;
 
-namespace ConcertApp.Tests.Infrastructure.OpenId;
+namespace OIdcMockingInfrastructure.OpenId;
 
 public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
 {

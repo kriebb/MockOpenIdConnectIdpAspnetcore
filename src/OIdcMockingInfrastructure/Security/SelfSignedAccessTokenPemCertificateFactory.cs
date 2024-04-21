@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace ConcertApp.Tests.Infrastructure.Security;
+namespace OIdcMockingInfrastructure.Security;
 
 public static class SelfSignedAccessTokenPemCertificateFactory
 {

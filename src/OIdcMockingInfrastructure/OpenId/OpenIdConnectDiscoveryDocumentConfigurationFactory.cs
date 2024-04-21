@@ -1,4 +1,4 @@
-namespace ConcertApp.Tests.Infrastructure.OpenId;
+namespace OIdcMockingInfrastructure.OpenId;
 
 public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
 {

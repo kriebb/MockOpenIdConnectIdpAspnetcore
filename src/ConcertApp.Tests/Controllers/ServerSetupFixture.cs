@@ -1,7 +1,4 @@
 ﻿using System.Collections.Specialized;
-using ConcertApp.Tests.Controllers.Models;
-using ConcertApp.Tests.Infrastructure.Jwt;
-using ConcertApp.Tests.Infrastructure.OpenId;
 using MartinCostello.Logging.XUnit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -11,12 +8,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
+using OIdcMockingInfrastructure.Jwt;
+using OIdcMockingInfrastructure.Models;
+using OIdcMockingInfrastructure.OpenId;
 using Xunit.Abstractions;
 
 namespace ConcertApp.Tests.Controllers;
 
 
-public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Program>
+public sealed class ServerSetupFixture : WebApplicationFactory<Program>
 {
     private Func<ITestOutputHelper?> _testoutputhelper = () => null;
 
@@ -24,11 +24,23 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
     public (string AccessToken, string IDToken, string RefreshToken) TokenFactoryFunc(
         (NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery) arg)
     {
-        var accessToken = JwtBearerAccessTokenFactory.Create(new AccessTokenParameters());
+        
+        var accessToken = JwtBearerAccessTokenFactory.Create(
+            new AccessTokenParameters(
+                Consts.ValidAudience, 
+                Consts.ValidIssuer, 
+                Consts.ValidSubClaimValue, 
+                arg.AuthorizationCodeRequestQuery["scope"]!,
+                Consts.ValidCountryClaimValue));
+        
         var idToken = JwtBearerAccessTokenFactory.Create(new IdTokenParameters(
-            sub: arg.AuthorizationCodeRequestQuery[""]!,
+            sub: Consts.ValidSubClaimValue,
             nonce: arg.AuthorizationCodeRequestQuery["nonce"]!,
-            scopes: arg.AuthorizationCodeRequestQuery["scope"]!));
+            scopes: arg.AuthorizationCodeRequestQuery["scope"]!,
+            audience: Consts.ValidAudience,
+            issuer: Consts.ValidIssuer,
+            countryClaimValidValue: Consts.ValidCountryClaimValue)
+            );
         var refreshToken = JwtBearerAccessTokenFactory.CreateRefreshToken();
         return (accessToken, idToken, refreshToken);
     }
@@ -48,12 +60,12 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 {
                     { "Jwt:Audience", Consts.ValidAudience },
                     { "Jwt:Issuer", Consts.ValidIssuer }
-                });
+                }!);
             })
             .ConfigureKestrel((context, options) =>
                 {
 
-                    options.ListenLocalhost(Consts.BaseAddressPort);
+                    options.ListenLocalhost(OIdcMockingInfrastructure.Consts.BaseAddressPort);
                 }
             )
             .ConfigureLogging((context, loggingBuilder) =>
@@ -67,7 +79,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(TokenFactoryFunc);
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer,TokenFactoryFunc);
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {
@@ -128,7 +140,7 @@ public sealed class WeatherForecastServerSetupFixture : WebApplicationFactory<Pr
 
     protected override void ConfigureClient(HttpClient client)
     {
-        client.BaseAddress = Consts.BaseAddress;
+        client.BaseAddress = OIdcMockingInfrastructure.Consts.BaseAddress;
 
     }
 

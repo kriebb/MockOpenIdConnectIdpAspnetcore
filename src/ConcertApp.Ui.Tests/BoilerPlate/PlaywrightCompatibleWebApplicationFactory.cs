@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using ConcertApp.Ui;
-using ConcertApp.Ui.Models;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -22,51 +21,55 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 {
 
     private const bool EnableRecording = false;
-    private const string FiddlerProxy = "http://localhost:8888";
-    private static string _proxy = FiddlerProxy;
-    private const string StgEnvironment = "STG";
     private const string DevelopmentEnvironment = "Development";
     private const string Environment = DevelopmentEnvironment;
 
 
     public PlaywrightCompatibleWebApplicationFactory()
     {
-
-        AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
-        ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
-
         var wireMockServerFactory = new WireMockServerFactory();
         OidcDependency = wireMockServerFactory.CreateDependency(
             () => TestOutputHelper,
             EnableRecording,
             "https://login.microsoft.com");
-        _OidcDependencyhost = new Uri(OidcDependency.Url).Host;
-        _OidcDependencyPort = new Uri(OidcDependency.Url).Port;
+        OidcDependencyUrl = new Uri(OidcDependency.Url ?? throw new InvalidOperationException());
 
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/.well-known/openid-configuration"))).RespondWith( WireMock.ResponseBuilders.Response.Create().WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-openid-config.json").Replace("https://login.microsoft.com/", $"https://{_OidcDependencyhost}:{_OidcDependencyPort}/")).WithHeader("content-type","application/json")); 
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/pf/JWKS"))).RespondWith( WireMock.ResponseBuilders.Response.Create().WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-wellknown-keys.json")).WithHeader("content-type","application/json"));
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("authorization.oauth2"))).RespondWith(WireMock.ResponseBuilders.Response.Create()
-                    .WithCallback(request =>
-                    {
-                        // Extracting query parameters from the actual request
-                        var client_id = request.Query["client_id"].ToString();
-                        var redirect_uri = request.Query["redirect_uri"].ToString();
-                        var response_type = request.Query["response_type"].ToString();
-                        var scope = request.Query["scope"].ToString();
-                        var state = request.Query["state"].ToString();
-                        _nonce = request.Query["nonce"].ToString();
-                        // Assuming the captured redirect_uri is already URL-encoded (as it should be)
-                        // Build the Location header with the captured redirect_uri
-                        string locationHeader = Uri.UnescapeDataString(redirect_uri);
-                        locationHeader += $"?code=1234567890&state={state}";
 
-                        // Provide the response with the redirection status and headers
-                        var message = new WireMock.ResponseMessage();
-                        message.StatusCode = 302; // HTTP status code for redirection
-                            message.Headers = new Dictionary<string, WireMockList<string>>(){  {"Location", locationHeader}}; // Redirect to the captured URI
+        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/.well-known/openid-configuration")))
+            .RespondWith(WireMock.ResponseBuilders.Response.Create()
+                .WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-openid-config.json")
+                    .Replace("https://login.microsoft.com/", $"https://{OidcDependencyUrl.Host}:{OidcDependencyUrl.Port}/"))
+                .WithHeader("content-type", "application/json"));
+        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/pf/JWKS")))
+            .RespondWith(WireMock.ResponseBuilders.Response.Create()
+                .WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-wellknown-keys.json"))
+                .WithHeader("content-type", "application/json"));
+        
+        
+        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("authorization.oauth2"))).RespondWith(
+            WireMock.ResponseBuilders.Response.Create()
+                .WithCallback(request =>
+                {
+                    // Extracting query parameters from the actual request
+                    var client_id = request.Query["client_id"].ToString();
+                    var redirect_uri = request.Query["redirect_uri"].ToString();
+                    var response_type = request.Query["response_type"].ToString();
+                    var scope = request.Query["scope"].ToString();
+                    var state = request.Query["state"].ToString();
+                    _nonce = request.Query["nonce"].ToString();
+                    // Assuming the captured redirect_uri is already URL-encoded (as it should be)
+                    // Build the Location header with the captured redirect_uri
+                    string locationHeader = Uri.UnescapeDataString(redirect_uri);
+                    locationHeader += $"?code=1234567890&state={state}";
 
-                            return message;
-                    }));
+                    // Provide the response with the redirection status and headers
+                    var message = new WireMock.ResponseMessage();
+                    message.StatusCode = 302; // HTTP status code for redirection
+                    message.Headers = new Dictionary<string, WireMockList<string>>()
+                        { { "Location", locationHeader } }; // Redirect to the captured URI
+
+                    return message;
+                }));
         OidcDependency.Given(Request.Create().UsingPost().WithPath(x => x.Contains("token.oauth2"))).RespondWith(
             WireMock.ResponseBuilders.Response.Create()
                 .WithCallback(request =>
@@ -83,11 +86,12 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                         DetectedBodyType = BodyType.Json,
                         BodyAsJson = new
                         {
-                            access_token = CreateAccessToken("TEST001","openid profile").AccessToken,
+                            access_token = CreateAccessToken("TEST001", "openid profile").AccessToken,
                             token_type = "Bearer",
                             expires_in = 3600,
                             refresh_token = CreateRefreshToken().RefreshToken,
-                            id_token = CreateIdToken("TEST001",_nonce ?? throw new NullReferenceException("Nonce was null")).IDToken,
+                            id_token = CreateIdToken("TEST001",
+                                _nonce ?? throw new NullReferenceException("Nonce was null")).IDToken,
                             scope = "openid profile"
                         },
                         BodyAsJsonIndented = true
@@ -97,16 +101,18 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                     return message;
                 }));
 
-        UsersApiDependency = wireMockServerFactory.CreateDependency(
+        ConcertsApiDependency = wireMockServerFactory.CreateDependency(
             () => TestOutputHelper,
             EnableRecording,
             "https://localhost:3011");
-        _WeatherappApiDependencyHost = new Uri(UsersApiDependency.Url).Host;
-        _WeatherAppApiDependencyPort = new Uri(UsersApiDependency.Url).Port;
-
+        ConcertsApiDependencyUrl = new Uri(ConcertsApiDependency.Url ?? throw new InvalidOperationException());
     }
 
-    public WireMockServer UsersApiDependency { get; set; }
+    public Uri OidcDependencyUrl { get; set; }
+
+    public Uri ConcertsApiDependencyUrl { get; set; }
+
+    public WireMockServer ConcertsApiDependency { get; set; }
 
 
     public WireMockServer OidcDependency { get; }
@@ -116,22 +122,21 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
     private IHost? _hostThatRunsKestrelImpl;
     private IHost? _hostThatRunsTestServer;
-    private readonly string _OidcDependencyhost;
-    private readonly int _OidcDependencyPort;
-
-    private readonly string _WeatherappApiDependencyHost;
-    private readonly int _WeatherAppApiDependencyPort;
 
     private string _nonce;
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new IPEndPoint(IPAddress.Loopback, port: 0);
 
     public static int GetAvailablePort()
     {
-        using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+        var port = -1;
+        while (port == -1)
         {
+            using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.Bind(DefaultLoopbackEndpoint);
-            return ((IPEndPoint)socket.LocalEndPoint).Port;
+            if (socket.LocalEndPoint != null) port = ((IPEndPoint)socket.LocalEndPoint).Port;
         }
+
+        return port;
     }
     /// <summary>
     /// CreateHost to ensure we can use the deferred way of capturing the program.cs Webhostbuilder without refactoring program.cs
@@ -165,11 +170,10 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                     {
 
                         new("oidc:Prompt","login"),
-                        new("oidc:Authority",$"https://{_OidcDependencyhost}:{_OidcDependencyPort}/"),
-                        new("oidc:ClientId","eMkJcwd6"),
-                        new("oidc:CallbackBaseUri",$"https://localhost:{kestrelPort}/weahterappui/"),
-                        new("ConcertApp:TemperatureAPIBaseUrl",$"https://{_WeatherappApiDependencyHost}:{_WeatherAppApiDependencyPort}/"),
-                        new("ConcertApp:TemperatureDirectUrl",$"https://{_WeatherappApiDependencyHost}:{_WeatherAppApiDependencyPort}/"),
+                        new("oidc:Authority",$"https://{OidcDependencyUrl.Host}:{OidcDependencyUrl.Port}/"),
+                        new("oidc:ClientId","someClientId"),
+                        new("oidc:CallbackBaseUri",$"https://localhost:{kestrelPort}/microsoft-signin"),
+                        new("ConcertApp:Api",$"https://{ConcertsApiDependencyUrl.Host}:{ConcertsApiDependencyUrl.Port}/"),
 
                     });
 

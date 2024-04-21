@@ -8,7 +8,6 @@ using WeatherApp.Ui.Tests.BoilerPlate;
 namespace WeatherApp.Ui.Tests;
 
 [Parallelizable(ParallelScope.Self)]
-[Explicit("This test is not working yet")]
 [TestFixture()]
 public class GivenHomePage : PageTest
 {
@@ -16,10 +15,7 @@ public class GivenHomePage : PageTest
         
     public override BrowserNewContextOptions ContextOptions()
     {
-        BrowserNewContextOptions? options = base.ContextOptions();
-
-
-            options = new()
+        BrowserNewContextOptions? options = new()
             {
                 IgnoreHTTPSErrors = true,
                 RecordHarMode = HarMode.Full,
@@ -36,25 +32,21 @@ public class GivenHomePage : PageTest
     public async Task Setup()
     {
          
-        Page.Request += (_, request) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine(">> " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
-        Page.RequestFailed += (_, request) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine(">> RequestFailed: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
-        Page.RequestFinished += (_, request) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine(">> RequestFinished: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+        Page.Request += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+        Page.RequestFailed += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> RequestFailed: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+        Page.RequestFinished += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> RequestFinished: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
 
-        Page.Response += (_, response) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine("<< " + response.Status + " " + response.Url + System.Environment.NewLine);
+        Page.Response += (_, response) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + response.Status + " " + response.Url + System.Environment.NewLine);
         
 
-        Page.PageError += (_, error) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine("<< " + error);
-        Page.Crash += (_, error) => SetUpConfig.UiWebApplicationFactory.TestOutputHelper.WriteLine("<< " + error);
+        Page.PageError += (_, error) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + error);
+        Page.Crash += (_, error) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + error);
 
         Page.SetDefaultTimeout(3000);
         Page.SetDefaultNavigationTimeout(3000);
-
-
-        var mappingsJsonToLoad = EmbeddedResourceReader.ReadAssets("HomeTests.Assets.Mappings").ToMappings();
-
-        SetUpConfig.UiWebApplicationFactory.UsersApiDependency.ResetMappings();
-        SetUpConfig.UiWebApplicationFactory.UsersApiDependency.WithMapping(mappingsJsonToLoad.ToArray());
-        await Page.GotoAsync($"{SetUpConfig.UiWebApplicationFactory.ServerAddress}weahterappui");
+        
+        SetUpConfig.WebAppFactory.ConcertsApiDependency.ResetMappings();
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
 
     }
 
@@ -65,7 +57,7 @@ public class GivenHomePage : PageTest
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        await Page.GotoAsync($"{SetUpConfig.UiWebApplicationFactory.ServerAddress}weahterappui");
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}weahterappui");
         await Page.GetByText("NL").ClickAsync();
         await Page.GetByRole(AriaRole.Link, new() { Name = "Een graad zoeken" }).ClickAsync();
 

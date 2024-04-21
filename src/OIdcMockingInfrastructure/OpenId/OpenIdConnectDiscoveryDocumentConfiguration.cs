@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ConcertApp.Tests.Infrastructure.OpenId;
+namespace OIdcMockingInfrastructure.OpenId;
 
 public record OpenIdConnectDiscoveryDocumentConfiguration(
     [property: JsonPropertyName("issuer")] string Issuer, 

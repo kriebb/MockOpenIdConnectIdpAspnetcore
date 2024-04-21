@@ -6,12 +6,12 @@ namespace WeatherApp.Ui.Tests;
 [SetUpFixture]
 public class SetUpConfig
 {
-    public static PlaywrightCompatibleWebApplicationFactory UiWebApplicationFactory { get; set; }
+    public static PlaywrightCompatibleWebApplicationFactory WebAppFactory { get; set; }
 
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
-        UiWebApplicationFactory = new PlaywrightCompatibleWebApplicationFactory();
+        WebAppFactory = new PlaywrightCompatibleWebApplicationFactory();
         
 
 
@@ -24,7 +24,7 @@ public class SetUpConfig
     
     public async Task OneTimeTearDown()
     {
-       await UiWebApplicationFactory.DisposeAsync();
+       await WebAppFactory.DisposeAsync();
     }
 
 }

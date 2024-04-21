@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
-namespace ConcertApp.Tests.Infrastructure.Security;
+namespace OIdcMockingInfrastructure.Security;
 
 public sealed record PemCertificate(string Certificate, string PrivateKey, string PublicKey)
 {

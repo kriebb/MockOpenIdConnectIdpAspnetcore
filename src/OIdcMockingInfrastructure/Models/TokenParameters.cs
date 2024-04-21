@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 
-namespace ConcertApp.Tests.Controllers.Models;
+namespace OIdcMockingInfrastructure.Models;
 
 public abstract record TokenParameters
 {

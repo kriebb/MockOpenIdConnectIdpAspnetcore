@@ -25,7 +25,7 @@ builder.Services.AddAuthorization(authorizationOptions =>
         
     authorizationOptions.AddPolicy("LoggedInCustomer", policy =>
         {
-            policy.RequireClaim("scope", "concertapi:tickets:write");
+            policy.RequireClaim("scope", "concert:ticket:buy");
         });
 });
 builder.Services.AddAuthentication(options =>
