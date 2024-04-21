@@ -148,3 +148,55 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 10px;
   }
 }
+
+
+.account-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  padding: 20px;
+}
+
+.identity-info {
+  text-align: left;
+  color: #333;
+}
+
+.section-title {
+  color: #4a90e2;
+  border-bottom: 2px solid #4a90e2;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+.user-details {
+  font-size: 16px;
+  list-style: none;
+  padding: 0;
+}
+
+.user-details li {
+  padding: 5px 0;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.user-claims {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.claims-header {
+  background-color: #f7f7fa;
+}
+
+.user-claims th, .user-claims td {
+  padding: 10px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.login-prompt {
+  text-align: center;
+  color: #888;
+  font-size: 18px;
+}

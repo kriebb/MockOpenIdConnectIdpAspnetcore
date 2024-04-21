@@ -1,19 +1,19 @@
 @model ConcertApp.Ui.Models.ManageAccountViewModel
 
-<div class="text-center account-container">
+<div class="account-container">
     @if(Model.IsAuthenticated)
     {
         <div class="identity-info">
-            <h2>Identity Information</h2>
-            <ul>
+            <h2 class="section-title">Identity Information</h2>
+            <ul class="user-details">
                 <li><strong>Name:</strong> @Model.Username</li>
                 <li><strong>Authentication Type:</strong> @Model.AuthenticationType</li>
                 <li><strong>Is Authenticated:</strong> Yes</li>
             </ul>
 
-            <h2>Claims</h2>
+            <h2 class="section-title">Claims</h2>
             <table class="table user-claims">
-                <thead>
+                <thead class="claims-header">
                     <tr>
                         <th>Type</th>
                         <th>Value</th>
@@ -33,6 +33,6 @@
     }
     else
     {
-        <p>Please log in to view your identity information.</p>
+        <p class="login-prompt">Please log in to view your identity information.</p>
     }
 </div>

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ConcertApp.Ui.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConcertApp.Ui.Controllers;
@@ -14,12 +15,14 @@ public class ConcertController : Controller
         _logger = logger;
     }
 
+    [AllowAnonymous]
     public IActionResult Index()
     {
         var model = new ConvertViewModel(new List<ConvertViewModel.ConcertItem>());
 
         return View(model);    
     }
+    [AllowAnonymous]
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
