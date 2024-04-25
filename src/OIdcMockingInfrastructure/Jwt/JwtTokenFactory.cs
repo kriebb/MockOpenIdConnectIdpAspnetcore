@@ -6,15 +6,14 @@ using OIdcMockingInfrastructure.Models;
 
 namespace OIdcMockingInfrastructure.Jwt;
 
-public static class JwtBearerAccessTokenFactory
+public static class JwtTokenFactory
 {
     public static string Create(TokenParameters tokenParameters)
     {
         var signingCredentials = new SigningCredentials(new X509SecurityKey(tokenParameters.SigningCertificate),
             SecurityAlgorithms.RsaSha256);
 
-        var notBefore = DateTime.UtcNow;
-        var expires = DateTime.UtcNow.AddHours(1);
+
 
 
         var identity = new ClaimsIdentity(tokenParameters.Claims);
@@ -23,8 +22,8 @@ public static class JwtBearerAccessTokenFactory
         {
             Audience = tokenParameters.Audience,
             Issuer = tokenParameters.Issuer,
-            NotBefore = notBefore,
-            Expires = expires,
+            NotBefore = tokenParameters.NotBefore,
+            Expires = tokenParameters.Expires,
             SigningCredentials = signingCredentials,
             Subject = identity,
         };

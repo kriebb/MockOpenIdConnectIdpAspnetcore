@@ -1,8 +1,8 @@
-using ConcertApp.WeatherManagement.Controllers.Models;
+using ConcertApp.ConcertManagement.Controllers.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ConcertApp.WeatherManagement.Controllers;
+namespace ConcertApp.ConcertManagement.Controllers;
 
 [ApiController]
 [Authorize(Policy = "OnlyBelgium")]

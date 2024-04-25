@@ -18,8 +18,9 @@ public record IdTokenParameters: TokenParameters
             new(Consts.CountryClaimType,
                 countryClaimValidValue),
             new("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
-            new("nonce", nonce)
         };
+        if(!string.IsNullOrWhiteSpace(nonce))
+            Claims.Add(new Claim("nonce", nonce));
     }
    
 }

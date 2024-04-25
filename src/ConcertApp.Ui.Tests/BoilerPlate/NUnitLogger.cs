@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 internal class NUnitLogger : ILogger
 {

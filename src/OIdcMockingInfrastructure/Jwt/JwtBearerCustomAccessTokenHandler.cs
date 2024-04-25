@@ -23,7 +23,7 @@ public class JwtBearerCustomAccessTokenHandler : DelegatingHandler
 
     private void SetAuthorizationHeader(HttpRequestMessage request)
     {
-        var encodedAccessToken = JwtBearerAccessTokenFactory.Create(_tokenParameters);
+        var encodedAccessToken = JwtTokenFactory.Create(_tokenParameters);
         _logger.LogInformation("Generated the following encoded accesstoken");
         _logger.LogInformation(encodedAccessToken);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", encodedAccessToken);

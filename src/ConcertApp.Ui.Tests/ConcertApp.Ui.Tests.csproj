@@ -7,7 +7,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <RootNamespace>WeatherApp.Ui.Tests</RootNamespace>
+        <RootNamespace>ConcertApp.Ui.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,6 +15,9 @@
       <Content Remove="SearchTests\**" />
       <EmbeddedResource Remove="SearchTests\**" />
       <None Remove="SearchTests\**" />
+      <None Update=".runsettings">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -42,15 +45,18 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ConcertApp.Ui\ConcertApp.Ui.csproj" />
+      <ProjectReference Include="..\OIdcMockingInfrastructure\OIdcMockingInfrastructure.csproj" />
     </ItemGroup>
+    
 
-    <ItemGroup>
-      <None Remove="Assets\AspnetDevServer\localhost.key" />
-      <None Remove="Assets\AspnetDevServer\localhost.pem" />
-      <None Remove="Assets\AspnetDevServer\localhost.pfx" />
-      <None Remove="Assets\openssl_crt.pem" />
-      <None Remove="Assets\private-key-traditional.pem" />
-      <Content Remove="HomeTests\Assets\GET provisioning_applications.json" />
-    </ItemGroup>
+    <PropertyGroup>
+        <RunSettingsFilePath>.runsettings</RunSettingsFilePath>
+    </PropertyGroup>
 
+    <Target Name="SetTestRunSettings" BeforeTargets="VSTest">
+        <ItemGroup>
+            <VSTestCLIRunSettings Include="@(None)" Condition="'%(None.Filename)%(None.Extension)'=='$(RunSettingsFilePath)'" />
+        </ItemGroup>
+    </Target>
+    
 </Project>

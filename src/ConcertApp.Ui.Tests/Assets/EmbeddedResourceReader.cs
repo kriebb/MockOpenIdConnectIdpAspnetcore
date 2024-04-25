@@ -2,7 +2,7 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace WeatherApp.Ui.Tests.Assets;
+namespace ConcertApp.Ui.Tests.Assets;
 
 /// <summary>
 ///     Contains methods for reading embedded resources.

@@ -1,7 +1,7 @@
-using WeatherApp.Ui.Tests.BoilerPlate.Json;
+using ConcertApp.Ui.Tests.BoilerPlate.Json;
 using WireMock.Admin.Mappings;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 public static class MappingsExtensions
 {

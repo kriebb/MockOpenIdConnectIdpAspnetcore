@@ -1,17 +1,22 @@
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using NUnit.Framework;
-using WeatherApp.Ui.Tests.Assets;
-using WeatherApp.Ui.Tests.BoilerPlate;
+using OIdcMockingInfrastructure.Jwt;
+using OIdcMockingInfrastructure.Models;
 
-namespace WeatherApp.Ui.Tests;
+namespace ConcertApp.Ui.Tests;
 
 [Parallelizable(ParallelScope.Self)]
 [TestFixture()]
 public class GivenHomePage : PageTest
 {
 
+    public GivenHomePage()
+    {
+        
+    }
         
     public override BrowserNewContextOptions ContextOptions()
     {
@@ -44,7 +49,35 @@ public class GivenHomePage : PageTest
 
         Page.SetDefaultTimeout(3000);
         Page.SetDefaultNavigationTimeout(3000);
+
+        SetUpConfig.WebAppFactory.TokenFactoryFunc = args =>
+        {
+            var scope = args.AuthorizationCodeRequestQuery["scope"]!;
+            var nonce = args.AuthorizationCodeRequestQuery["nonce"];
+            var userId = Constants.UserId;
+
+            var token = new Token(
+                AccessToken: CreateAccessToken(userId, scope),
+                RefreshToken: CreateRefreshToken(),
+                IdToken: CreateIdToken(userId, nonce, scope));
+
+            return token;
+        };
         
+        SetUpConfig.WebAppFactory.UserInfoResponseFunc = () => new UserInfoEndpointResponseBody(
+            ODataContext: Constants.ODataContext,
+            BusinessPhones: Constants.BusinessPhones,
+            DisplayName: Constants.DisplayName,
+            GivenName: Constants.GivenName,
+            JobTitle: Constants.JobTitle,
+            Mail: Constants.Mail,
+            MobilePhone: Constants.MobilePhone,
+            OfficeLocation: Constants.OfficeLocation,
+            PreferredLanguage: Constants.PreferredLanguage,
+            Surname: Constants.Surname,
+            UserPrincipalName: Constants.UserPrincipalName,
+            Id: Constants.UserId
+        );
         SetUpConfig.WebAppFactory.ConcertsApiDependency.ResetMappings();
         await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
 
@@ -52,15 +85,68 @@ public class GivenHomePage : PageTest
 
 
     [Test]
-    public async Task WhenWeClickOnSearch_SearchPageShouldAppear()
+    public async Task WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear()
     {
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}weahterappui");
-        await Page.GetByText("NL").ClickAsync();
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Een graad zoeken" }).ClickAsync();
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
 
-        await Expect(Page.GetByText( "Een graad zoeken")).ToBeInViewportAsync();
+        await Expect(Page.GetByText( "Welcome to ConcertApp!")).ToBeInViewportAsync();
+    }
+    
+    [Test]
+    public async Task WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser()
+    {
+        Page.SetDefaultTimeout(30000);
+        Page.SetDefaultNavigationTimeout(30000);
+
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
+
+        await Expect(Page.GetByText( "Welcome Kristof Riebbels!")).ToBeInViewportAsync();
+    }
+    
+    
+    public string CreateAccessToken(string userid, string scope)
+    {
+        var accessToken = JwtTokenFactory.Create(
+            new AccessTokenParameters(
+                Constants.ValidAudience, 
+                Constants.ValidIssuer, 
+                userid, 
+                scope,
+                Constants.ValidCountryClaimValue));
+        return accessToken;
+    }
+
+    public string CreateIdToken(string userId, string? nonce, string scope)
+    {
+        var idTokenParam = new IdTokenParameters(
+            userId,
+            nonce,
+            scope,
+            Constants.ValidAudience,
+            Constants.ValidIssuer,
+            Constants.ValidCountryClaimValue);
+
+
+        idTokenParam
+            .AddOrReplaceClaim("uid", "uid_" + userId)
+            .AddOrReplaceClaim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+        var idToken = JwtTokenFactory.Create(idTokenParam);
+        return idToken;
+    }
+
+    public string CreateRefreshToken()
+    {
+        // This is a simple method to create a secure random string for a refresh token.
+        // In a production system, you may need to include additional logic to manage issuance,
+        // storage, revocation, and security of refresh tokens.
+        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        var refreshToken = Convert.ToBase64String(randomBytes);
+
+        return refreshToken;
     }
 }

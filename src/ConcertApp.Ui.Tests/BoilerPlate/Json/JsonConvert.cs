@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate.Json;
+namespace ConcertApp.Ui.Tests.BoilerPlate.Json;
 
 public static class JsonConvert
 {

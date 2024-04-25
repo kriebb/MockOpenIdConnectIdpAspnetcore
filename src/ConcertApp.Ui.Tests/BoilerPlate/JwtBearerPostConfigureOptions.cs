@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 /// <summary>
 ///     Used to setup defaults for all <see cref="JwtBearerOptions" />.

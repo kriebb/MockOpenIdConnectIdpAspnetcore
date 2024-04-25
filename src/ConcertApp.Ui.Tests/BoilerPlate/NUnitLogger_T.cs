@@ -1,4 +1,4 @@
-﻿namespace WeatherApp.Ui.Tests.BoilerPlate;
+﻿namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 internal sealed class NUnitLogger<T> : NUnitLogger, ILogger<T>
 {

@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FluentValidation.Internal;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate.Json;
+namespace ConcertApp.Ui.Tests.BoilerPlate.Json;
 
 public sealed class CamelCasePropertyNameResolver
 {

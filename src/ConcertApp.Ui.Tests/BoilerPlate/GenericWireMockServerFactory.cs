@@ -1,11 +1,10 @@
 using System.Collections.Specialized;
-using System.Diagnostics;
-using WeatherApp.Ui.Tests.BoilerPlate.Json;
+using ConcertApp.Ui.Tests.BoilerPlate.Json;
 using WireMock.Logging;
 using WireMock.Server;
 using WireMock.Settings;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
 {
@@ -60,7 +59,7 @@ public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
 
     private void SetupLogEntriesHandler(Func<ITestOutputHelper> testOutputHelper, WireMockServer mockedExternalDependency)
     {
-        mockedExternalDependency.LogEntriesChanged += (sender, e) =>
+        mockedExternalDependency.LogEntriesChanged += (_, e) =>
         {
             if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
             {

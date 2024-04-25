@@ -1,6 +1,6 @@
 using WireMock.Server;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 public sealed class WireMockServerFactory
 {

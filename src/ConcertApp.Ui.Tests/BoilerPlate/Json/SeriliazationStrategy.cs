@@ -1,4 +1,4 @@
-namespace WeatherApp.Ui.Tests.BoilerPlate.Json;
+namespace ConcertApp.Ui.Tests.BoilerPlate.Json;
 
 public enum SeriliazationStrategy
 {

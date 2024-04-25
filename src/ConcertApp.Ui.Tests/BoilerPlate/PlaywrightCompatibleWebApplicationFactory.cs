@@ -1,21 +1,18 @@
+using System.Collections.Specialized;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
-using ConcertApp.Ui;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.IdentityModel.Tokens;
-using WeatherApp.Ui.Tests.Assets;
-using WeatherApp.Ui.Tests.BoilerPlate.Json;
-using WireMock.RequestBuilders;
+using OIdcMockingInfrastructure;
+using OIdcMockingInfrastructure.Models;
+using OIdcMockingInfrastructure.OpenId;
 using WireMock.Server;
-using WireMock.Types;
-using WireMock.Util;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<Program>
 {
@@ -28,78 +25,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     public PlaywrightCompatibleWebApplicationFactory()
     {
         var wireMockServerFactory = new WireMockServerFactory();
-        OidcDependency = wireMockServerFactory.CreateDependency(
-            () => TestOutputHelper,
-            EnableRecording,
-            "https://login.microsoft.com");
-        OidcDependencyUrl = new Uri(OidcDependency.Url ?? throw new InvalidOperationException());
-
-
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/.well-known/openid-configuration")))
-            .RespondWith(WireMock.ResponseBuilders.Response.Create()
-                .WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-openid-config.json")
-                    .Replace("https://login.microsoft.com/", $"https://{OidcDependencyUrl.Host}:{OidcDependencyUrl.Port}/"))
-                .WithHeader("content-type", "application/json"));
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("/pf/JWKS")))
-            .RespondWith(WireMock.ResponseBuilders.Response.Create()
-                .WithBody(EmbeddedResourceReader.ReadAsset("Assets.oidc-wellknown-keys.json"))
-                .WithHeader("content-type", "application/json"));
-        
-        
-        OidcDependency.Given(Request.Create().UsingGet().WithPath(x => x.Contains("authorization.oauth2"))).RespondWith(
-            WireMock.ResponseBuilders.Response.Create()
-                .WithCallback(request =>
-                {
-                    // Extracting query parameters from the actual request
-                    var client_id = request.Query["client_id"].ToString();
-                    var redirect_uri = request.Query["redirect_uri"].ToString();
-                    var response_type = request.Query["response_type"].ToString();
-                    var scope = request.Query["scope"].ToString();
-                    var state = request.Query["state"].ToString();
-                    _nonce = request.Query["nonce"].ToString();
-                    // Assuming the captured redirect_uri is already URL-encoded (as it should be)
-                    // Build the Location header with the captured redirect_uri
-                    string locationHeader = Uri.UnescapeDataString(redirect_uri);
-                    locationHeader += $"?code=1234567890&state={state}";
-
-                    // Provide the response with the redirection status and headers
-                    var message = new WireMock.ResponseMessage();
-                    message.StatusCode = 302; // HTTP status code for redirection
-                    message.Headers = new Dictionary<string, WireMockList<string>>()
-                        { { "Location", locationHeader } }; // Redirect to the captured URI
-
-                    return message;
-                }));
-        OidcDependency.Given(Request.Create().UsingPost().WithPath(x => x.Contains("token.oauth2"))).RespondWith(
-            WireMock.ResponseBuilders.Response.Create()
-                .WithCallback(request =>
-                {
-                    var message = new WireMock.ResponseMessage();
-                    message.StatusCode = 200; // HTTP status code for redirection
-                    message.Headers = new Dictionary<string, WireMockList<string>>()
-                        { { "Content-Type", "application/json" } }; // Redirect to the captured URI
-
-                    message.BodyDestination = null;
-                    message.BodyData = new BodyData
-                    {
-                        Encoding = Encoding.UTF8,
-                        DetectedBodyType = BodyType.Json,
-                        BodyAsJson = new
-                        {
-                            access_token = CreateAccessToken("TEST001", "openid profile").AccessToken,
-                            token_type = "Bearer",
-                            expires_in = 3600,
-                            refresh_token = CreateRefreshToken().RefreshToken,
-                            id_token = CreateIdToken("TEST001",
-                                _nonce ?? throw new NullReferenceException("Nonce was null")).IDToken,
-                            scope = "openid profile"
-                        },
-                        BodyAsJsonIndented = true
-                    };
-
-
-                    return message;
-                }));
+    
 
         ConcertsApiDependency = wireMockServerFactory.CreateDependency(
             () => TestOutputHelper,
@@ -108,22 +34,20 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
         ConcertsApiDependencyUrl = new Uri(ConcertsApiDependency.Url ?? throw new InvalidOperationException());
     }
 
-    public Uri OidcDependencyUrl { get; set; }
+
+    public Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token> TokenFactoryFunc { get; set; } 
+    public Func<UserInfoEndpointResponseBody> UserInfoResponseFunc { get; set; }
 
     public Uri ConcertsApiDependencyUrl { get; set; }
 
     public WireMockServer ConcertsApiDependency { get; set; }
-
-
-    public WireMockServer OidcDependency { get; }
-
+    
 
     public ITestOutputHelper TestOutputHelper { get; set; } = new ConsoleTestOutputHelper();
 
     private IHost? _hostThatRunsKestrelImpl;
     private IHost? _hostThatRunsTestServer;
 
-    private string _nonce;
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new IPEndPoint(IPAddress.Loopback, port: 0);
 
     public static int GetAvailablePort()
@@ -170,12 +94,11 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                     {
 
                         new("oidc:Prompt","login"),
-                        new("oidc:Authority",$"https://{OidcDependencyUrl.Host}:{OidcDependencyUrl.Port}/"),
                         new("oidc:ClientId","someClientId"),
                         new("oidc:CallbackBaseUri",$"https://localhost:{kestrelPort}/microsoft-signin"),
                         new("ConcertApp:Api",$"https://{ConcertsApiDependencyUrl.Host}:{ConcertsApiDependencyUrl.Port}/"),
 
-                    });
+                    }!);
 
 
 
@@ -189,19 +112,69 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                     new NUnitLoggerProvider(() => TestOutputHelper ?? new ConsoleTestOutputHelper()));
             })
             .ConfigureServices(services =>
-            {
-                services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
+                    //stubbing microsoft specific library is a bit different
+                    services.PostConfigure<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme, options =>
                     {
-                        ValidAudience = TestAuthorisationConstants.Audience,
-                        ValidIssuer = TestAuthorisationConstants.Issuer
-                    };
-                    //options.Audience = TestAuthorisationConstants.Audience;
-                    options.Authority = TestAuthorisationConstants.Issuer;
-                    options.MetadataAddress = new Uri(OidcDependency.Url!) + ".well-known/openid-configuration";
+                        var OIDCConfiguration = Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration(Constants.ValidIssuer);
+                        var backChannelMessageHandler = ConfigForMockedOpenIdConnectServer.CreateHttpHandler(Constants.ValidIssuer, TokenFactoryFunc, UserInfoResponseFunc);
+                        var backChannelHttpClient = ConfigForMockedOpenIdConnectServer.CreateHttpClient(backChannelMessageHandler);
+                        
+                        
+                        options.TokenEndpoint = OIDCConfiguration.TokenEndpoint;
+                        options.AuthorizationEndpoint = OIDCConfiguration.AuthorizationEndpoint;
+                        options.UserInformationEndpoint = OIDCConfiguration.UserinfoEndpoint;
+                        //backchannel(httphandler) is the httpclient(messagehandler) that is used to make the request to the identity provider when trading the authorization code for the token
+                        options.Backchannel = backChannelHttpClient;
+                        options.Events = new OAuthEvents()
+                        {
+                            OnAccessDenied = context =>
+                            {
+                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+                                
+                                logger?.LogInformation("On Access Denied. Result: {0} Failure:{1}", context.Result.Succeeded, context.Result?.Failure?.Message);
+                                return Task.CompletedTask;
+                            },
+                            OnCreatingTicket = context => {
+                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+
+                                logger?.LogInformation("On Creating Ticket. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                return Task.CompletedTask;
+                            },
+                            OnRemoteFailure = context =>
+                            {
+                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+                                
+                                logger?.LogInformation("On Remote Failure. Result: {0} Failure:{1}", context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                return Task.CompletedTask;
+                            },
+                            OnTicketReceived = context =>
+                            {
+                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+
+                                logger?.LogInformation("On Ticket Received. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
+                                    string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
+                                return Task.CompletedTask;
+                            },
+                            OnRedirectToAuthorizationEndpoint = context => {
+                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+
+                                //redirect to the authorization endpoint in the browser. This is the endpoint where the user will authenticate
+                                //context.Response.Redirect(context.RedirectUri); //redirect because when  you reassign, redirect is not happening
+                                //but we need to override it, so we can do a mock redirect from the IDP to the server. From there, the server will do
+                                //a backchannel request to the IDP to get the token
+                                
+                                var authorizationCodeInHeader = backChannelMessageHandler.GetAuthorizationLocationHeader(context.RedirectUri);
+                                context.Response.Redirect(authorizationCodeInHeader);
+                                
+                                logger?.LogInformation("Redirected to authorization endpoint:" + context.RedirectUri);
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
+                    
+                    
                 });
-            });
             // Create and start the Kestrel server before the test server,  
             // otherwise due to the way the deferred host builder works    
             // for minimal hosting, the server will not get "initialized    
@@ -259,6 +232,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     }
 
 
+
     private void EnsureServer()
     {
         if (_hostThatRunsKestrelImpl is null)
@@ -269,52 +243,6 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     }
 
 
-    public Token CreateAccessToken(string userId, string scope)
-    {
-        var token = new JwtTokenBuilder()
-            .ForSubject(userId)
-            .ForAudience(TestAuthorisationConstants.Audience)
-            .IssuedBy(TestAuthorisationConstants.Issuer)
-            .WithClaim("scope", scope)
-            .WithClaim("uid", "uid_"+userId)
-            .WithClaim("member_of", JsonConvert.SerializeObject(new []{"test 1", "test 2","Customer User Admin" }))
-
-            .WithSigningCertificate(
-                EmbeddedResourceReader.GetCertificate("openssl_crt.pem", "private-key-traditional.pem"));
-
-
-        return new Token { AccessToken = token.BuildToken() };
-    }
-
-    public Token CreateIdToken(string userId, string nonce)
-    {
-
-
-        var token = new JwtTokenBuilder()
-            .ForSubject(userId)
-            .ForAudience(TestAuthorisationConstants.Audience)
-            .IssuedBy(TestAuthorisationConstants.Issuer)
-            .WithClaim("nonce", nonce)
-            .WithClaim("uid", "uid_"+userId)
-
-            .WithClaim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
-            // Include other necessary OpenID Connect claims
-            .WithSigningCertificate(
-                EmbeddedResourceReader.GetCertificate("openssl_crt.pem", "private-key-traditional.pem"));
-
-        return new Token { IDToken = token.BuildToken() };
-    }
-
-    public Token CreateRefreshToken()
-    {
-        // This is a simple method to create a secure random string for a refresh token.
-        // In a production system, you may need to include additional logic to manage issuance,
-        // storage, revocation, and security of refresh tokens.
-        var randomBytes = RandomNumberGenerator.GetBytes(64);
-        var refreshToken = Convert.ToBase64String(randomBytes);
-
-        return new Token { RefreshToken = refreshToken };
-    }
 
     public override async ValueTask DisposeAsync()
     {

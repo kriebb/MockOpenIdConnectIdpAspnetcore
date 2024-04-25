@@ -1,6 +1,6 @@
 using WireMock.Handlers;
 
-namespace WeatherApp.Ui.Tests.BoilerPlate;
+namespace ConcertApp.Ui.Tests.BoilerPlate;
 
 public sealed class GuidLocalFileSystemHandler : LocalFileSystemHandler
 {

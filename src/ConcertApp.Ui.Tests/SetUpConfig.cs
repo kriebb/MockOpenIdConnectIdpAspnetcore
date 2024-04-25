@@ -1,7 +1,7 @@
+using ConcertApp.Ui.Tests.BoilerPlate;
 using NUnit.Framework;
-using WeatherApp.Ui.Tests.BoilerPlate;
 
-namespace WeatherApp.Ui.Tests;
+namespace ConcertApp.Ui.Tests;
 
 [SetUpFixture]
 public class SetUpConfig

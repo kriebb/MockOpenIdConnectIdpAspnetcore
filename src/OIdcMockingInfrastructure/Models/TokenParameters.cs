@@ -9,8 +9,11 @@ public abstract record TokenParameters
     public string Audience { get; set; }
     public string Issuer { get; set; }
     public List<Claim> Claims { get; set; }
+    
+    public DateTime NotBefore { get; set; }= DateTime.UtcNow;
+    public DateTime Expires { get; set; }= DateTime.UtcNow.AddHours(1);
 
-    public void AddOrReplaceClaim(string claimType, string claimValue)
+    public TokenParameters AddOrReplaceClaim(string claimType, string claimValue)
     {
         var claim = Claims?.FirstOrDefault(x => x.Type == claimType);
         if (claim != null)
@@ -18,5 +21,7 @@ public abstract record TokenParameters
 
         Claims ??= new List<Claim>();
         Claims.Add(new Claim(claimType, claimValue));
+
+        return this;
     }
 }

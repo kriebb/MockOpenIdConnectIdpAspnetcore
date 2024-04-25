@@ -20,29 +20,27 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
 {
     private Func<ITestOutputHelper?> _testoutputhelper = () => null;
 
-
-    public (string AccessToken, string IDToken, string RefreshToken) TokenFactoryFunc(
+    public Token TokenFactoryFunc(
         (NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery) arg)
     {
         
-        var accessToken = JwtBearerAccessTokenFactory.Create(
+        var accessToken = JwtTokenFactory.Create(
             new AccessTokenParameters(
                 Consts.ValidAudience, 
                 Consts.ValidIssuer, 
                 Consts.ValidSubClaimValue, 
                 arg.AuthorizationCodeRequestQuery["scope"]!,
                 Consts.ValidCountryClaimValue));
-        
-        var idToken = JwtBearerAccessTokenFactory.Create(new IdTokenParameters(
-            sub: Consts.ValidSubClaimValue,
-            nonce: arg.AuthorizationCodeRequestQuery["nonce"]!,
-            scopes: arg.AuthorizationCodeRequestQuery["scope"]!,
-            audience: Consts.ValidAudience,
-            issuer: Consts.ValidIssuer,
-            countryClaimValidValue: Consts.ValidCountryClaimValue)
-            );
-        var refreshToken = JwtBearerAccessTokenFactory.CreateRefreshToken();
-        return (accessToken, idToken, refreshToken);
+
+        var idToken = "not supported for this api. OAuth2 only";
+        var refreshToken = "not supported for this api. OAuth2 only";
+
+        return new Token
+        (
+            AccessToken : accessToken,
+            IdToken : idToken,
+            RefreshToken : refreshToken
+        );
     }
 
 
@@ -79,7 +77,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer,TokenFactoryFunc);
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer,TokenFactoryFunc, () => throw new NotSupportedException("There is no userinfoEndpoint for this api"));
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {

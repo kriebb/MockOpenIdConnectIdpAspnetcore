@@ -9,7 +9,7 @@
     <EnvironmentVariables>
       <!-- For debugging selectors, it's recommend to set the following environment variable -->
       <DEBUG>pw:api</DEBUG>
-      <PWDEBUG>0</PWDEBUG>
+      <PWDEBUG>1</PWDEBUG>
 
 	</EnvironmentVariables>
   </RunConfiguration>
@@ -18,7 +18,7 @@
     <BrowserName>chromium</BrowserName>
     <ExpectTimeout>5000</ExpectTimeout>
     <LaunchOptions>
-      <Headless>true</Headless>
+      <Headless>false</Headless>
       <Channel>msedge</Channel>
     </LaunchOptions>
   </Playwright>
