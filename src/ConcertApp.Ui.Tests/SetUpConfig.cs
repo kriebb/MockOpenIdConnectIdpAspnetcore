@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ConcertApp.Ui.Tests.BoilerPlate;
 using NUnit.Framework;
 
@@ -11,6 +12,7 @@ public class SetUpConfig
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
+        Trace.Listeners.Add(new ConsoleTraceListener());
         WebAppFactory = new PlaywrightCompatibleWebApplicationFactory();
         
 

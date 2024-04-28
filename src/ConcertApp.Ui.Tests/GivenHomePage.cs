@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using NUnit.Framework;
@@ -32,21 +33,55 @@ public class GivenHomePage : PageTest
         return options;
     }
 
+    private ILoggerFactory LoggerFactory { get; } = SetUpConfig.WebAppFactory.LoggerFactory;
 
     [SetUp]
     public async Task Setup()
     {
-         
-        Page.Request += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
-        Page.RequestFailed += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> RequestFailed: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
-        Page.RequestFinished += (_, request) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine(">> RequestFinished: " + request.Method + " " + request.Url + System.Environment.NewLine + Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+        var logger = SetUpConfig.WebAppFactory.LoggerFactory.CreateLogger<GivenHomePage>();
+        bool ShouldIgnore(string url)
+        {
+            // Matches .js or .css followed by an optional version query string ?v=
+            var pattern = @".*\.(js|css)(\?v=.*)?$";
+            return Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
+        }
 
-        Page.Response += (_, response) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + response.Status + " " + response.Url + System.Environment.NewLine);
+        Page.Request += (_, request) =>
+        {
+            if (!ShouldIgnore(request.Url))
+            {
+                using(logger.BeginScope("SetUp"))
+                    logger.LogInformation("Request Sent: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+            }
+        };
+
+        Page.RequestFailed += (_, request) =>
+        {
+            if (!ShouldIgnore(request.Url))
+            {
+                using(logger.BeginScope("SetUp"))
+                    logger.LogError("Request Failed: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+            }
+        };
+
+        Page.RequestFinished += (_, request) =>
+        {
+            if (!ShouldIgnore(request.Url))
+            {
+                using(logger.BeginScope("SetUp"))
+                    logger.LogInformation("Request Finished: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+            }
+        };
+
+        Page.Response += (_, response) =>
+        {
+            if (!ShouldIgnore(response.Url) || response.Status != 200)
+            {
+                using(logger.BeginScope("SetUp"))
+                    logger.LogInformation("Response Received: {Status} {Url}", response.Status, response.Url);
+            }
+        };
         
-
-        Page.PageError += (_, error) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + error);
-        Page.Crash += (_, error) => SetUpConfig.WebAppFactory.TestOutputHelper.WriteLine("<< " + error);
-
         Page.SetDefaultTimeout(3000);
         Page.SetDefaultNavigationTimeout(3000);
 
@@ -66,18 +101,16 @@ public class GivenHomePage : PageTest
         
         SetUpConfig.WebAppFactory.UserInfoResponseFunc = () => new UserInfoEndpointResponseBody(
             ODataContext: Constants.ODataContext,
-            BusinessPhones: Constants.BusinessPhones,
             DisplayName: Constants.DisplayName,
             GivenName: Constants.GivenName,
-            JobTitle: Constants.JobTitle,
             Mail: Constants.Mail,
             MobilePhone: Constants.MobilePhone,
-            OfficeLocation: Constants.OfficeLocation,
             PreferredLanguage: Constants.PreferredLanguage,
             Surname: Constants.Surname,
             UserPrincipalName: Constants.UserPrincipalName,
             Id: Constants.UserId
         );
+        
         SetUpConfig.WebAppFactory.ConcertsApiDependency.ResetMappings();
         await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
 
@@ -87,6 +120,9 @@ public class GivenHomePage : PageTest
     [Test]
     public async Task WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear()
     {
+        var logger = LoggerFactory.CreateLogger(nameof(WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear));
+        logger.LogInformation("Starting test");
+        
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
@@ -98,6 +134,9 @@ public class GivenHomePage : PageTest
     [Test]
     public async Task WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser()
     {
+        var logger = LoggerFactory.CreateLogger(nameof(WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser));
+        logger.LogInformation("Starting test");
+        
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 

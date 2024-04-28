@@ -131,20 +131,19 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
         return message;
     }
 
-    public string GetAuthorizationLocationHeader(string query)
+ 
+    public string GetAuthorizationLocationHeaderFromFullUri(string redirectUriToAuthorizationServer)
     {
         //parse the query to a dictionary
-        if (query == null) throw new ArgumentNullException(nameof(query), "No query parameters found in http request");
+        if (redirectUriToAuthorizationServer == null) throw new ArgumentNullException(nameof(redirectUriToAuthorizationServer), "No query parameters found in http request");
 
-        var queryString = HttpUtility.ParseQueryString(query);
+        var queryString = HttpUtility.ParseQueryString(redirectUriToAuthorizationServer);
 
         var redirectUri = queryString["redirect_uri"];
         if (redirectUri == null)
             throw new ArgumentNullException(nameof(redirectUri), "No redirect_uri found in http request");
+        
         var state = queryString["state"];
-        if (state == null)
-            throw new ArgumentNullException(nameof(state), "No state found in http request");
-
         var scope = queryString["scope"];
         if (scope == null)
             throw new ArgumentNullException(nameof(scope), "No scope found in http request. Needed to build the tokenresponse");
@@ -154,19 +153,22 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
         // Build the Location header with the captured redirect_uri
         // The code is are hardcoded for simplicity
         string locationHeader = Uri.UnescapeDataString(redirectUri);
-        locationHeader += $"?code={Consts.AuthorizationCode}&state={state}"; //https://openid.net/specs/openid-connect-core-1_0.html#AuthResponse
+        locationHeader += $"?code={Consts.AuthorizationCode}";
+        
+        if(!string.IsNullOrWhiteSpace(state))
+            locationHeader +=$"&state={state}"; //https://openid.net/specs/openid-connect-core-1_0.html#AuthResponse
+        
         _requests.Add(Consts.AuthorizationCode, queryString);
 
         // Provide the response with the redirection status and headers
-        return locationHeader;
-
+        return locationHeader;    
     }
 
     public async Task<HttpResponseMessage> GetAuthorizationResponseMessage(HttpRequestMessage request)
     {
         // Extracting query parameters from the actual request
         var query = request.RequestUri?.Query!;
-        string locationHeader = GetAuthorizationLocationHeader(query);
+        string locationHeader = GetAuthorizationLocationHeaderFromFullUri(query);
         // Provide the response with the redirection status and headers
         var message = new HttpResponseMessage(HttpStatusCode.Redirect);
         message.Headers.Location =new Uri(locationHeader); // Redirect back to the client with the authorization code and the state

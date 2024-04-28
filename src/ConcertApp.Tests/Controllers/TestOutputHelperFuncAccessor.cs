@@ -1,4 +1,5 @@
 using MartinCostello.Logging.XUnit;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace ConcertApp.Tests.Controllers;

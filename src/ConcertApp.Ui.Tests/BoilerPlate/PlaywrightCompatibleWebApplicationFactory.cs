@@ -1,12 +1,15 @@
 using System.Collections.Specialized;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using NUnit.Framework;
 using OIdcMockingInfrastructure;
 using OIdcMockingInfrastructure.Models;
 using OIdcMockingInfrastructure.OpenId;
@@ -28,7 +31,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     
 
         ConcertsApiDependency = wireMockServerFactory.CreateDependency(
-            () => TestOutputHelper,
+            () => Services.GetRequiredService<ILogger<WireMockServerFactory>>(),
             EnableRecording,
             "https://localhost:3011");
         ConcertsApiDependencyUrl = new Uri(ConcertsApiDependency.Url ?? throw new InvalidOperationException());
@@ -42,13 +45,12 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
     public WireMockServer ConcertsApiDependency { get; set; }
     
-
-    public ITestOutputHelper TestOutputHelper { get; set; } = new ConsoleTestOutputHelper();
-
+    
     private IHost? _hostThatRunsKestrelImpl;
     private IHost? _hostThatRunsTestServer;
 
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new IPEndPoint(IPAddress.Loopback, port: 0);
+    private ILoggerFactory? _logger;
 
     public static int GetAvailablePort()
     {
@@ -62,6 +64,12 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
         return port;
     }
+    
+    public ILoggerFactory LoggerFactory => _logger ??= Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
+        .AddConsole()
+        .AddDebug()
+        .SetMinimumLevel(LogLevel.Trace));
+
     /// <summary>
     /// CreateHost to ensure we can use the deferred way of capturing the program.cs Webhostbuilder without refactoring program.cs
     /// </summary>
@@ -69,6 +77,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     /// <returns></returns>
     protected override IHost CreateHost(IHostBuilder builder)
     {
+        var logger = LoggerFactory.CreateLogger<PlaywrightCompatibleWebApplicationFactory>();
         var kestrelPort = GetAvailablePort();
         try
         {
@@ -82,99 +91,141 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
             builder.ConfigureWebHost(webHostBuilder => webHostBuilder.UseKestrel(options =>
                 {
-                    options.ListenLocalhost(kestrelPort, x=> x.UseHttps());
+                    options.ListenLocalhost(kestrelPort, x => x.UseHttps());
                 }))
-                   .ConfigureAppConfiguration(
-                configuration =>
-                {
-
-                    configuration.AddJsonFile("appsettings.json");
-                    configuration.AddJsonFile($"appsettings.{Environment}.json");
-                    configuration.AddInMemoryCollection(new List<KeyValuePair<string, string>>()
+                .ConfigureAppConfiguration(
+                    configuration =>
                     {
 
-                        new("oidc:Prompt","login"),
-                        new("oidc:ClientId","someClientId"),
-                        new("oidc:CallbackBaseUri",$"https://localhost:{kestrelPort}/microsoft-signin"),
-                        new("ConcertApp:Api",$"https://{ConcertsApiDependencyUrl.Host}:{ConcertsApiDependencyUrl.Port}/"),
-
-                    }!);
-
-
-
-                    configuration.AddUserSecrets<Program>();
-
-                })
-            .ConfigureLogging(loggingBuilder =>
-            {
-                loggingBuilder.ClearProviders();
-                loggingBuilder.AddProvider(
-                    new NUnitLoggerProvider(() => TestOutputHelper ?? new ConsoleTestOutputHelper()));
-            })
-            .ConfigureServices(services =>
-                {
-                    //stubbing microsoft specific library is a bit different
-                    services.PostConfigure<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme, options =>
-                    {
-                        var OIDCConfiguration = Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration(Constants.ValidIssuer);
-                        var backChannelMessageHandler = ConfigForMockedOpenIdConnectServer.CreateHttpHandler(Constants.ValidIssuer, TokenFactoryFunc, UserInfoResponseFunc);
-                        var backChannelHttpClient = ConfigForMockedOpenIdConnectServer.CreateHttpClient(backChannelMessageHandler);
-                        
-                        
-                        options.TokenEndpoint = OIDCConfiguration.TokenEndpoint;
-                        options.AuthorizationEndpoint = OIDCConfiguration.AuthorizationEndpoint;
-                        options.UserInformationEndpoint = OIDCConfiguration.UserinfoEndpoint;
-                        //backchannel(httphandler) is the httpclient(messagehandler) that is used to make the request to the identity provider when trading the authorization code for the token
-                        options.Backchannel = backChannelHttpClient;
-                        options.Events = new OAuthEvents()
+                        configuration.AddJsonFile("appsettings.json");
+                        configuration.AddJsonFile($"appsettings.{Environment}.json");
+                        configuration.AddInMemoryCollection(new List<KeyValuePair<string, string>>()
                         {
-                            OnAccessDenied = context =>
+
+                            new("Authentication:Microsoft:ClientId", "fakeClientId"),
+                            new("Authentication:Microsoft:ClientSecret", "f4k3Cl13ntS3cr3t"),
+                            new("Authentication:Microsoft:ValidIssuer", Constants.ValidIssuer),
+                            new("Authentication:Microsoft:ValidAudience", Constants.ValidAudience),
+                            new("Authentication:Microsoft:Authority", Constants.ValidAuthority),
+
+                            new("ConcertApp:Api", $"https://{ConcertsApiDependencyUrl.Host}:{ConcertsApiDependencyUrl.Port}/"),
+
+                        }!);
+
+
+
+                        configuration.AddUserSecrets<Program>();
+
+                    })
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddConsole();
+                    loggingBuilder.AddDebug();
+                })
+                .ConfigureServices(services =>
+                {
+                    
+                    services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme,
+                    options =>
+                    {
+                        var backChannelMessageHandler = ConfigForMockedOpenIdConnectServer.CreateHttpHandler(Constants.ValidIssuer, TokenFactoryFunc, UserInfoResponseFunc);
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(backChannelMessageHandler);
+                        options.Backchannel =
+                            ConfigForMockedOpenIdConnectServer.CreateHttpClient(backChannelMessageHandler); //needed to fetch the access_token and id_token
+                        options.Events = new OpenIdConnectEvents()
+                        {
+                            OnAuthenticationFailed = context =>
                             {
-                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
                                 
-                                logger?.LogInformation("On Access Denied. Result: {0} Failure:{1}", context.Result.Succeeded, context.Result?.Failure?.Message);
+                                logger.LogError("Authentication Failed. Result: {0} Failure:{1}", context.Exception.Message, context.Result?.Failure?.Message);
                                 return Task.CompletedTask;
                             },
-                            OnCreatingTicket = context => {
-                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
+                            OnAccessDenied = context => {
 
-                                logger?.LogInformation("On Creating Ticket. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                logger.LogError("Access Denied. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                return Task.CompletedTask;
+                            },
+                            OnTokenValidated = context =>
+                            {
+
+                                logger.LogInformation("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
+                                    string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
+                                return Task.CompletedTask;
+                            },
+                            OnMessageReceived = context =>
+                            {
+                                logger.LogInformation($"Message Received: Token?: [{context.Token}]" );
+
+                                return Task.CompletedTask;
+                            },
+                            OnRedirectToIdentityProvider = context =>
+                            {
+                                //Middleware for Browser! Does not pass trough the ConfigurationManager
+                                //This happens after this event. Why I do not know ==> TODO: ask on GITHUB
+                                context.Properties.Items.Add(OpenIdConnectDefaults.RedirectUriForCodePropertiesKey, context.ProtocolMessage?.RedirectUri);
+                                context.ProtocolMessage!.State = context.Options.StateDataFormat.Protect(context.Properties);
+                                
+                                var authorizationRequestUri = context.ProtocolMessage?.BuildRedirectUrl()!;
+                                var mockedAuthorizationCode = backChannelMessageHandler.GetAuthorizationLocationHeaderFromFullUri(authorizationRequestUri);
+                                
+                                logger?.LogInformation("Override Browser Redirect! Redirected to authorization endpoint:" + mockedAuthorizationCode);
+
+                                context.HandleResponse();
+                                context.Response.Redirect(mockedAuthorizationCode);
+                                
+                                return Task.CompletedTask;
+                            },
+                            OnRedirectToIdentityProviderForSignOut = context =>
+                            {
+
+                                logger.LogInformation("Redirect to Identity Provider for SignOut. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
                                 return Task.CompletedTask;
                             },
                             OnRemoteFailure = context =>
                             {
-                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
-                                
-                                logger?.LogInformation("On Remote Failure. Result: {0} Failure:{1}", context.Result?.Succeeded, context.Result?.Failure?.Message);
+
+                                logger.LogError("Remote Failure. Result: {0} Failure:{1}", context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                return Task.CompletedTask;
+                            },
+                            OnSignedOutCallbackRedirect = context =>
+                            {
+
+                                logger.LogInformation("Signed Out Callback Redirect. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
+                                return Task.CompletedTask;
+                            },
+                            OnRemoteSignOut = context =>
+                            {
+
+                                logger.LogInformation("Signed Out Redirect to Identity Provider. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
+                                return Task.CompletedTask;
+                            },
+                            OnTokenResponseReceived = context =>
+                            {
+                                logger.LogInformation("Token Response Received. Token: {0}", context.TokenEndpointResponse.AccessToken);
                                 return Task.CompletedTask;
                             },
                             OnTicketReceived = context =>
+                                {
+                                    logger.LogInformation("Ticket Received. ReturnUri: {0}", context.ReturnUri);
+                                    return Task.CompletedTask;
+                                },
+                            OnAuthorizationCodeReceived = context =>
                             {
-                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
-
-                                logger?.LogInformation("On Ticket Received. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
-                                    string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
+                                logger.LogInformation("Authorization Code Received. Code: {0}", context.ProtocolMessage.Code);
+                                
                                 return Task.CompletedTask;
                             },
-                            OnRedirectToAuthorizationEndpoint = context => {
-                                var logger = Services.GetRequiredService<ILogger<PlaywrightCompatibleWebApplicationFactory>>();
-
-                                //redirect to the authorization endpoint in the browser. This is the endpoint where the user will authenticate
-                                //context.Response.Redirect(context.RedirectUri); //redirect because when  you reassign, redirect is not happening
-                                //but we need to override it, so we can do a mock redirect from the IDP to the server. From there, the server will do
-                                //a backchannel request to the IDP to get the token
-                                
-                                var authorizationCodeInHeader = backChannelMessageHandler.GetAuthorizationLocationHeader(context.RedirectUri);
-                                context.Response.Redirect(authorizationCodeInHeader);
-                                
-                                logger?.LogInformation("Redirected to authorization endpoint:" + context.RedirectUri);
+                            OnUserInformationReceived = context =>
+                            {
+                                logger.LogInformation("UserInformation Received. User: {0}", context.User.RootElement.ToString() );
                                 return Task.CompletedTask;
                             }
                         };
                     });
-                    
-                    
-                });
+                
+           
+        });
             // Create and start the Kestrel server before the test server,  
             // otherwise due to the way the deferred host builder works    
             // for minimal hosting, the server will not get "initialized    
@@ -278,3 +329,4 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
     }
 }
+

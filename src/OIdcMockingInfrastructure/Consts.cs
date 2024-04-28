@@ -20,7 +20,10 @@ public class Consts
     
     public static PemCertificate ValidSigningCertificate { get;  }= SelfSignedAccessTokenPemCertificateFactory.Create();
 
-    public static string WellKnownOpenIdConfiguration { get; set; } = "https://i.do.not.exist/.well-known/openid-configuration";
+    public static string Authority = "https://i.do.not.exist/";
+    public static string WellKnownOpenIdConfiguration { get; set; } = Authority+".well-known/openid-configuration";
 
     public const string AuthorizationCode = "123456789";
+    
+    
 }

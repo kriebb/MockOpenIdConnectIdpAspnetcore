@@ -1,10 +1,7 @@
 ﻿namespace ConcertApp.Ui.Tests;
 
 public sealed class Constants
-{
-
-
-    public static string ValidScopeClaimValue = "openid profile email";
+{ 
     public static string ValidCountryClaimValue { get; set; } = "Belgium";
 
     public static string ValidIssuer { get; } = $"Issuer:Dotnet:ConcertApp:Tests:Project";
@@ -22,4 +19,5 @@ public sealed class Constants
     public static string Surname { get; set; }= "Riebbels";
     public static string UserPrincipalName { get; set; }= "Kristof.Riebbels@xebia.com";
     public static string UserId { get; set; }= "06018149-8367-4a03-942c-11c2db3daa6f";
+    public static string ValidAuthority { get; set; } = "https://i.do.not.exist.com/";
 }

@@ -45,4 +45,11 @@ public class ConfigForMockedOpenIdConnectServer
             tokenFactoryFunc, userInfoResponseFunc);
         
     }
+
+    public static IConfigurationManager<OpenIdConnectConfiguration>? Create(MockingOpenIdProviderMessageHandler backChannelMessageHandler)
+    {
+        return new ConfigurationManager<OpenIdConnectConfiguration>(
+            Consts.WellKnownOpenIdConfiguration, new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever(CreateHttpClient(backChannelMessageHandler)));
+    }
 }

@@ -7,20 +7,21 @@ public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
         var discoveryDocument = new OpenIdConnectDiscoveryDocumentConfiguration(
 
             Issuer: issuer,
-            AuthorizationEndpoint: "http://i.do.not.exist/authorize",
-            TokenEndpoint: "http://i.do.not.exist/oauth/token",
-            DeviceAuthorizationEndpoint: "http://i.do.not.exist/oauth/device/code",
-            UserinfoEndpoint: "https://i.do.not.exist/userinfo",
-            MfaChallengeEndpoint: "https://i.do.not.exist/mfa/challenge",
-            JwksUri: "https://i.do.not.exist/.well-known/jwks.json",
-            RegistrationEndpoint: "https://i.do.not.exist/oidc/register",
-            RevocationEndpoint: "https://i.do.not.exist/oauth/revoke",
+            AuthorizationEndpoint: Consts.Authority+"/authorize",
+            TokenEndpoint: Consts.Authority+"/oauth/token",
+            DeviceAuthorizationEndpoint: Consts.Authority+"/oauth/device/code",
+            UserinfoEndpoint: Consts.Authority+"/userinfo",
+            MfaChallengeEndpoint:Consts.Authority+"/mfa/challenge",
+            JwksUri: Consts.Authority+"/.well-known/jwks.json",
+            RegistrationEndpoint: Consts.Authority+"/oidc/register",
+            RevocationEndpoint: Consts.Authority+"/oauth/revoke",
             ScopesSupported: new[]
             {
                 "openid",
                 "profile",
                 "offline_access",
-                "weatherforecast:read"
+                "email",
+                "concert:ticket:buy"
             },
             ResponseTypesSupported: new[]
             {
@@ -66,7 +67,8 @@ public static class OpenIdConnectDiscoveryDocumentConfigurationFactory
                 "sub",
                 "nbf",
                 "scope",
-                "country"
+                "country",
+                "email"
             },
             RequestUriParameterSupported: false
         );

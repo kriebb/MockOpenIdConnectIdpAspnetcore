@@ -51,6 +51,6 @@ public class AccountController : Controller
     }
     public async Task<IActionResult> Login()
     {
-        return View("Login", new LoginViewModel(HttpContext.User.Identity.Name));
+        return View("Login", new LoginViewModel(HttpContext.User.Identity?.Name));
     }
 }

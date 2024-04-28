@@ -1,15 +1,19 @@
-using ConcertApp.Ui;
+using System.Security.Claims;
 using ConcertApp.Ui.Infrastructure;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using ConcertApp.Ui.Infrastructure.Options;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddDebug();
+builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Debug);
+
 builder.Configuration.AddUserSecrets<ConcertApp.Ui.Program>();
 
 //https://learn.microsoft.com/en-us/aspnet/core/security/authentication/social/microsoft-logins?view=aspnetcore-8.0
@@ -23,24 +27,38 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.Cookie.SameSite = SameSiteMode.Lax; // Check and adjust according to your application requirements
 });
-builder.Services.AddIdentityCore<IdentityUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = true;
-    })
-    .AddSignInManager<MicrosoftSignInManager>()  // Only add the necessary services for authentication
+builder.Services.AddIdentityCore<IdentityUser>()
+    .AddSignInManager<OpenIdConnectSignInManager>() //Only add the necessary services for authentication
     .AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(options =>
     {
-        // use the default scheme for everything unless specified otherwise
-        options.DefaultScheme = MicrosoftAccountDefaults.AuthenticationScheme;
+        options.DefaultScheme = OpenIdConnectDefaults.AuthenticationScheme;
     })
-    .AddMicrosoftAccount(microsoftOptions =>
+    .AddOpenIdConnect(aspnetCoreOidcOptions =>
     {
-        microsoftOptions.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"]!;
-        microsoftOptions.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]!;
-        microsoftOptions.SignInScheme = IdentityConstants.ExternalScheme;
-    }).AddIdentityCookies();
+        var appSettingsOptions = new OpenIdConnectionAppSettingsOptions();
+        builder.Configuration.GetRequiredSection("Authentication:Microsoft").Bind(appSettingsOptions);
+        appSettingsOptions.Validate();
+        
+        aspnetCoreOidcOptions.ClientId = appSettingsOptions.ClientId;
+        aspnetCoreOidcOptions.ClientSecret = appSettingsOptions.ClientSecret;
+        aspnetCoreOidcOptions.SignInScheme = appSettingsOptions.SignInScheme;
+        aspnetCoreOidcOptions.Authority = appSettingsOptions.Authority;
+        aspnetCoreOidcOptions.TokenValidationParameters.ValidIssuer = appSettingsOptions.ValidIssuer;
+        aspnetCoreOidcOptions.TokenValidationParameters.ValidAudience = appSettingsOptions.ValidAudience;
+        aspnetCoreOidcOptions.Prompt = appSettingsOptions.Prompt;
+        aspnetCoreOidcOptions.UsePkce = appSettingsOptions.UsePkce!.Value;
+        aspnetCoreOidcOptions.ResponseMode = appSettingsOptions.ResponseMode;
+        aspnetCoreOidcOptions.ResponseType = appSettingsOptions.ResponseType;
+        aspnetCoreOidcOptions.Scope.Add(appSettingsOptions.Scope);
+        aspnetCoreOidcOptions.MapInboundClaims = appSettingsOptions.MapInboundClaims.GetValueOrDefault();
+        aspnetCoreOidcOptions.GetClaimsFromUserInfoEndpoint = appSettingsOptions.GetClaimsFromUserInfoEndpoint.GetValueOrDefault();
+        aspnetCoreOidcOptions.ClaimActions.MapJsonKey(ClaimTypes.Name, appSettingsOptions.ClaimName);
+        
+        
+    }).
+    AddIdentityCookies();
 
 
 builder.Services.AddDistributedMemoryCache();

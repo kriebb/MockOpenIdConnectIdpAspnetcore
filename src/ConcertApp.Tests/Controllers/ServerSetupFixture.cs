@@ -77,35 +77,33 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
                 services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
                     options =>
                     {
+                        var logger = Services.GetRequiredService<ILogger<ServerSetupFixture>>();
+
                         options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer,TokenFactoryFunc, () => throw new NotSupportedException("There is no userinfoEndpoint for this api"));
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {
                             OnAuthenticationFailed = context =>
                             {
-                                var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
                                 
-                                testOutputHelper?.WriteLine("Authentication Failed. Result: {0} Failure:{1}", context.Exception.Message, context.Result?.Failure?.Message);
+                                logger.LogInformation("Authentication Failed. Result: {0} Failure:{1}", context.Exception.Message, context.Result?.Failure?.Message);
                                 return Task.CompletedTask;
                             },
                             OnForbidden = context => {
-                                var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
-                                testOutputHelper?.WriteLine("Token Validated. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                logger.LogInformation("Token Validated. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
                                 return Task.CompletedTask;
                             },
                             OnTokenValidated = context =>
                             {
-                                var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
-                                testOutputHelper?.WriteLine("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
+                                logger.LogInformation("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
                                     string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
                                 return Task.CompletedTask;
                             },
                             OnMessageReceived = context => {
-                                var testOutputHelper = Services.GetRequiredService<ITestOutputHelperAccessor>().OutputHelper;
 
-                                testOutputHelper?.WriteLine("Message Received.");
+                                logger.LogInformation("Message Received.");
                                 return Task.CompletedTask;
                             }
                         };
@@ -115,7 +113,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
 
 
     /// <summary>
-    /// Clears the current <see cref="ITestOutputHelper"/>.
+    /// Clears the current <see cref="ILogger"/>.
     /// </summary>
     public void ClearOutputHelper()
     {
@@ -123,9 +121,9 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Sets the <see cref="ITestOutputHelper"/> to use.
+    /// Sets the <see cref="ILogger"/> to use.
     /// </summary>
-    /// <param name="value">The <see cref="ITestOutputHelper"/> to use.</param>
+    /// <param name="value">The <see cref="ILogger"/> to use.</param>
     public void SetOutputHelper(ITestOutputHelper value)
     {
         _testoutputhelper = () => value;

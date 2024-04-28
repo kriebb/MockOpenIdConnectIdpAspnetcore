@@ -6,7 +6,7 @@ using WireMock.Settings;
 
 namespace ConcertApp.Ui.Tests.BoilerPlate;
 
-public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
+public class DependencyService(Func<ILogger> loggerFactory)
 {
     public WireMockServer CreateDependency(string domain, string? fullProxyHostUri = null, bool enableRecording = false)
     {
@@ -28,7 +28,7 @@ public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
 
         var mockedExternalDependency = WireMockServer.Start(wireMockServerSettings);
 
-        SetupLogEntriesHandler(testOutputHelperFactory, mockedExternalDependency);
+        SetupLogEntriesHandler(loggerFactory, mockedExternalDependency);
 
         return mockedExternalDependency;
     }
@@ -57,7 +57,7 @@ public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
         }
     }
 
-    private void SetupLogEntriesHandler(Func<ITestOutputHelper> testOutputHelper, WireMockServer mockedExternalDependency)
+    private void SetupLogEntriesHandler(Func<ILogger> loggerFactory, WireMockServer mockedExternalDependency)
     {
         mockedExternalDependency.LogEntriesChanged += (_, e) =>
         {
@@ -75,18 +75,18 @@ public class DependencyService(Func<ITestOutputHelper> testOutputHelperFactory)
                         var reasons = logEntry.PartialMatchResult.MatchDetails
                             .Select(x => $"{x?.MatcherType.Name}[Score:{x.Score}]").ToArray();
 
-                        testOutputHelper().WriteLine("Reason: PartialMatchResult:" + string.Join(",", reasons));
+                        loggerFactory().LogInformation("Reason: PartialMatchResult:" + string.Join(",", reasons));
                     }
 
                     if (logEntry.RequestMatchResult is not null)
                     {
                         var reasons = logEntry.RequestMatchResult.MatchDetails
                             .Select(x => $"{x?.MatcherType.Name}[Score:{x.Score}]").ToArray();
-                        testOutputHelper().WriteLine("Reason: RequestMatchResult:" + string.Join(",", reasons));
+                        loggerFactory().LogInformation("Reason: RequestMatchResult:" + string.Join(",", reasons));
                     }
 
-                    testOutputHelper().WriteLine("RequestMessage: AbsoluteUrl: " + logEntry.RequestMessage.AbsoluteUrl);
-                    testOutputHelper().WriteLine("RequestMessage: Body: " + JsonConvert.SerializeObject(logEntry.RequestMessage.Body));
+                    loggerFactory().LogInformation("RequestMessage: AbsoluteUrl: " + logEntry.RequestMessage.AbsoluteUrl);
+                    loggerFactory().LogInformation("RequestMessage: Body: " + JsonConvert.SerializeObject(logEntry.RequestMessage.Body));
                 }
             }
         };
