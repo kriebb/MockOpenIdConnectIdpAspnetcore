@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace OIdcMockingInfrastructure.Security;
 
-public static class SelfSignedAccessTokenPemCertificateFactory
+public static class SelfSignedTokenPemCertificateFactory
 {
     public static PemCertificate Create()
     {

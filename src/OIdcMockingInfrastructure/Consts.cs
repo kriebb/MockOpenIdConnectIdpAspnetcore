@@ -18,7 +18,7 @@ public class Consts
     private static OpenIdConnectDiscoveryDocumentConfiguration? _openIdConnectDiscoveryDocumentConfiguration = null;
     public static OpenIdConnectDiscoveryDocumentConfiguration ValidOpenIdConnectDiscoveryDocumentConfiguration(string validIssuer) => _openIdConnectDiscoveryDocumentConfiguration ??= OpenIdConnectDiscoveryDocumentConfigurationFactory.Create(validIssuer);
     
-    public static PemCertificate ValidSigningCertificate { get;  }= SelfSignedAccessTokenPemCertificateFactory.Create();
+    public static PemCertificate ValidSigningCertificate { get;  }= SelfSignedTokenPemCertificateFactory.Create();
 
     public static string Authority = "https://i.do.not.exist/";
     public static string WellKnownOpenIdConfiguration { get; set; } = Authority+".well-known/openid-configuration";

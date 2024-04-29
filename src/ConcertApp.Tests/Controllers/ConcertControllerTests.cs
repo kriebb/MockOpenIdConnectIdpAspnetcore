@@ -100,7 +100,7 @@ public class ConcertControllerTests : IClassFixture<ServerSetupFixture>
         {
             var tokenParameters = new AccessTokenParameters(Consts.ValidAudience, Consts.ValidIssuer,Consts.ValidSubClaimValue,Consts.ValidScopeClaimValue,Consts.ValidCountryClaimValue)
             {
-                SigningCertificate = SelfSignedAccessTokenPemCertificateFactory.Create().ToX509Certificate2()
+                SigningCertificate = SelfSignedTokenPemCertificateFactory.Create().ToX509Certificate2()
             };
 
             var httpClient = _fixture.CreateDefaultClient(AddTokens(tokenParameters));
