@@ -4,30 +4,30 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Web;
-using Microsoft.AspNetCore.Http;
 using OIdcMockingInfrastructure.Models;
 using OIdcMockingInfrastructure.Security;
 
 namespace OIdcMockingInfrastructure.OpenId;
 
-public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
+public sealed class MockingOpenIdProviderMessageHandler(
+    OpenIdConnectDiscoveryDocumentConfiguration openIdConnectDiscoveryDocumentConfiguration,
+    PemCertificate tokenSigningCertificate)
+    : HttpMessageHandler
 {
-    private readonly OpenIdConnectDiscoveryDocumentConfiguration _openIdConnectDiscoveryDocumentConfiguration;
-    private readonly PemCertificate _tokenSigningCertificate;
+    private readonly OpenIdConnectDiscoveryDocumentConfiguration _openIdConnectDiscoveryDocumentConfiguration = openIdConnectDiscoveryDocumentConfiguration ?? throw new ArgumentNullException(nameof(openIdConnectDiscoveryDocumentConfiguration));
+    private readonly PemCertificate _tokenSigningCertificate = tokenSigningCertificate ?? throw new ArgumentNullException(nameof(tokenSigningCertificate));
 
-    private readonly IDictionary<string?, NameValueCollection> _requests = new ConcurrentDictionary<string?, NameValueCollection>();
-    private readonly Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery),Token> _tokenFactoryFunc;
-    private readonly Func<UserInfoEndpointResponseBody> _userInfoResponseFunc;
+    private readonly IDictionary<string, NameValueCollection> _requests = new ConcurrentDictionary<string, NameValueCollection>();
+    private readonly Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery), Token>? _tokenFactoryFunc;
+    private readonly Func<UserInfoEndpointResponseBody>? _userInfoResponseFunc;
 
     public MockingOpenIdProviderMessageHandler(
         OpenIdConnectDiscoveryDocumentConfiguration openIdConnectDiscoveryDocumentConfiguration,
         PemCertificate tokenSigningCertificate,
-        Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery),Token> tokenFactoryFunc,
-        Func<UserInfoEndpointResponseBody> userInfoResponseFunc)
-        
+        Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery), Token>? tokenFactoryFunc,
+        Func<UserInfoEndpointResponseBody>? userInfoResponseFunc):this(openIdConnectDiscoveryDocumentConfiguration, tokenSigningCertificate)
+
     {
-        _openIdConnectDiscoveryDocumentConfiguration = openIdConnectDiscoveryDocumentConfiguration ?? throw new ArgumentNullException(nameof(openIdConnectDiscoveryDocumentConfiguration));
-        _tokenSigningCertificate = tokenSigningCertificate ?? throw new ArgumentNullException(nameof(tokenSigningCertificate));
         _tokenFactoryFunc = tokenFactoryFunc;
         _userInfoResponseFunc = userInfoResponseFunc;
     }
@@ -47,7 +47,7 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
             return await GetOpenIdConfigurationHttpResponseMessage();
 
         if (request.RequestUri.AbsoluteUri.Equals(_openIdConnectDiscoveryDocumentConfiguration.JwksUri))
-            return await GetJwksHttpResonseMessage();
+            return await GetJwksHttpResponseMessage();
 
         if (request.RequestUri.AbsoluteUri.Contains(_openIdConnectDiscoveryDocumentConfiguration.AuthorizationEndpoint))
             return await GetAuthorizationResponseMessage(request);
@@ -63,17 +63,25 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
 
     private Task<HttpResponseMessage> GetUserInformation(HttpRequestMessage request)
     {
+        if(_userInfoResponseFunc == null)   
+            throw new ArgumentNullException(nameof(_userInfoResponseFunc), "No user information response function provided");
+
+        var user = _userInfoResponseFunc();
+        if(user == null)
+            throw new ArgumentNullException(nameof(user), "No user information response provided");
         var httpResponseMessage = new HttpResponseMessage();
 
         httpResponseMessage.StatusCode = HttpStatusCode.OK;
-        httpResponseMessage.Content = JsonContent.Create(_userInfoResponseFunc(),MediaTypeHeaderValue.Parse("application/json"));
+        httpResponseMessage.Content = JsonContent.Create(user, MediaTypeHeaderValue.Parse("application/json"));
         return Task.FromResult(httpResponseMessage);
     }
 
     private async Task<HttpResponseMessage> GetTokenResponseMessage(HttpRequestMessage request)
     {
-        string? code = null;
-        NameValueCollection authenticationQueryString = null;
+        if (_tokenFactoryFunc == null)
+            throw new ArgumentNullException(nameof(_tokenFactoryFunc), "No token factory function provided");
+
+        NameValueCollection authenticationQueryString;
 
         if (request.Method == HttpMethod.Get) //For OIDC LIbrary
         {
@@ -97,7 +105,7 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
         {
             throw new NotSupportedException("TokenRequest should be a GET or a POST");
         }
-        code = authenticationQueryString["code"];
+        var code = authenticationQueryString["code"];
 
         if (code == null)
             throw new ArgumentNullException(nameof(code), "No code found in http request");
@@ -146,7 +154,7 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
         var state = queryString["state"];
         var scope = queryString["scope"];
         if (scope == null)
-            throw new ArgumentNullException(nameof(scope), "No scope found in http request. Needed to build the tokenresponse");
+            throw new ArgumentNullException(nameof(scope), "No scope found in http request. Needed to build the token response");
         // State is used as a reference to retrieve the query parameters later
 
         // Assuming the captured redirect_uri is already URL-encoded (as it should be)
@@ -186,12 +194,12 @@ public sealed class MockingOpenIdProviderMessageHandler : HttpMessageHandler
         return Task.FromResult(httpResponseMessage);
     }
 
-    private Task<HttpResponseMessage> GetJwksHttpResonseMessage()
+    private Task<HttpResponseMessage> GetJwksHttpResponseMessage()
     {
         var httpResponseMessage = new HttpResponseMessage();
 
-        var jwksCertificate = _tokenSigningCertificate.ToJwksCertificate();
-        httpResponseMessage.Content = JsonContent.Create(jwksCertificate, MediaTypeHeaderValue.Parse("application/json"));
+        var certificate = _tokenSigningCertificate.ToJwksCertificate();
+        httpResponseMessage.Content = JsonContent.Create(certificate, MediaTypeHeaderValue.Parse("application/json"));
 
         httpResponseMessage.StatusCode = HttpStatusCode.OK;
         return Task.FromResult(httpResponseMessage);

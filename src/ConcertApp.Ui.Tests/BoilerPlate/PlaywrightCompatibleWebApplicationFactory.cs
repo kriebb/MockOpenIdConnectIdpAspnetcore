@@ -39,7 +39,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
 
     public Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token> TokenFactoryFunc { get; set; } 
-    public Func<UserInfoEndpointResponseBody> UserInfoResponseFunc { get; set; }
+    public Func<UserInfoEndpointResponseBody>? UserInfoResponseFunc { get; set; }
 
     public Uri ConcertsApiDependencyUrl { get; set; }
 

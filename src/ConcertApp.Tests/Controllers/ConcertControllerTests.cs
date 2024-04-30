@@ -11,17 +11,11 @@ using Xunit.Abstractions;
 
 namespace ConcertApp.Tests.Controllers;
 
-public class ConcertControllerTests : IClassFixture<ServerSetupFixture>
+public class ConcertControllerTests(ITestOutputHelper testOutputHelper, ServerSetupFixture fixture)
+    : IClassFixture<ServerSetupFixture>
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-    private readonly ServerSetupFixture _fixture;
-
-    public ConcertControllerTests(ITestOutputHelper testOutputHelper, ServerSetupFixture fixture)
-    {
-        _testOutputHelper = testOutputHelper;
-        _fixture = fixture;
-    }
-
+    private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
+    private readonly ServerSetupFixture _fixture = fixture;
 
 
     public sealed class PurchaseTicket : ConcertControllerTests,IDisposable

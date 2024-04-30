@@ -52,4 +52,10 @@ public class ConfigForMockedOpenIdConnectServer
             Consts.WellKnownOpenIdConfiguration, new OpenIdConnectConfigurationRetriever(),
             new HttpDocumentRetriever(CreateHttpClient(backChannelMessageHandler)));
     }
+
+    public static IConfigurationManager<OpenIdConnectConfiguration>? Create(string validIssuer)
+    {
+        return new MockingOpenIdProviderMessageHandler(
+            Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration(validIssuer), Consts.ValidSigningCertificate);
+    }
 }

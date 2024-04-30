@@ -18,31 +18,7 @@ namespace ConcertApp.Tests.Controllers;
 
 public sealed class ServerSetupFixture : WebApplicationFactory<Program>
 {
-    private Func<ITestOutputHelper?> _testoutputhelper = () => null;
-
-    public Token TokenFactoryFunc(
-        (NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery) arg)
-    {
-        
-        var accessToken = JwtTokenFactory.Create(
-            new AccessTokenParameters(
-                Consts.ValidAudience, 
-                Consts.ValidIssuer, 
-                Consts.ValidSubClaimValue, 
-                arg.AuthorizationCodeRequestQuery["scope"]!,
-                Consts.ValidCountryClaimValue));
-
-        var idToken = "not supported for this api. OAuth2 only";
-        var refreshToken = "not supported for this api. OAuth2 only";
-
-        return new Token
-        (
-            AccessToken : accessToken,
-            IdToken : idToken,
-            RefreshToken : refreshToken
-        );
-    }
-
+    private Func<ITestOutputHelper?> _testOutputHelper = () => null;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -70,7 +46,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
             {
                 loggingBuilder.AddConsole();
                 loggingBuilder.AddDebug();
-                loggingBuilder.AddXUnit(new TestOutputHelperFuncAccessor(_testoutputhelper));
+                loggingBuilder.AddXUnit(new TestOutputHelperFuncAccessor(_testOutputHelper));
             })
             .ConfigureTestServices(services =>
             {
@@ -117,7 +93,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
     /// </summary>
     public void ClearOutputHelper()
     {
-        _testoutputhelper = () => null;
+        _testOutputHelper = () => null;
     }
 
     /// <summary>
@@ -126,7 +102,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
     /// <param name="value">The <see cref="ILogger"/> to use.</param>
     public void SetOutputHelper(ITestOutputHelper value)
     {
-        _testoutputhelper = () => value;
+        _testOutputHelper = () => value;
     }
 
 
