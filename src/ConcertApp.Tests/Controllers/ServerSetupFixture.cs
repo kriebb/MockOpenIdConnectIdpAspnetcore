@@ -55,7 +55,7 @@ public sealed class ServerSetupFixture : WebApplicationFactory<Program>
                     {
                         var logger = Services.GetRequiredService<ILogger<ServerSetupFixture>>();
 
-                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer,TokenFactoryFunc, () => throw new NotSupportedException("There is no userinfoEndpoint for this api"));
+                        options.ConfigurationManager = ConfigForMockedOpenIdConnectServer.Create(Consts.ValidIssuer);
                         options.IncludeErrorDetails = true;
                         options.Events = new JwtBearerEvents()
                         {

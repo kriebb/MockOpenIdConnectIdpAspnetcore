@@ -49,16 +49,16 @@
       <ProjectReference Include="..\ConcertApp.Ui\ConcertApp.Ui.csproj" />
       <ProjectReference Include="..\OIdcMockingInfrastructure\OIdcMockingInfrastructure.csproj" />
     </ItemGroup>
-    
 
+	<!--       
     <PropertyGroup>
-        <RunSettingsFilePath>.runsettings</RunSettingsFilePath>
+<RunSettingsFilePath>.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <Target Name="SetTestRunSettings" BeforeTargets="VSTest">
         <ItemGroup>
             <VSTestCLIRunSettings Include="@(None)" Condition="'%(None.Filename)%(None.Extension)'=='$(RunSettingsFilePath)'" />
         </ItemGroup>
-    </Target>
+    </Target>-->
     
 </Project>

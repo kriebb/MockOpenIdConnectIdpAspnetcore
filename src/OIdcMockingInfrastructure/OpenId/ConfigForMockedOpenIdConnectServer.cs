@@ -9,7 +9,7 @@ public class ConfigForMockedOpenIdConnectServer
 {
     public static IConfigurationManager<OpenIdConnectConfiguration> Create(string validIssuer,
         Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery), Token>
-            tokenFactoryFunc, Func<UserInfoEndpointResponseBody> userInfoResponseFunc)
+            tokenFactoryFunc, Func<UserInfoEndpointResponseBody>? userInfoResponseFunc)
     {
         var openIdHttpClient = CreateHttpClient(validIssuer, tokenFactoryFunc, userInfoResponseFunc);
 
@@ -21,7 +21,7 @@ public class ConfigForMockedOpenIdConnectServer
     
     public static HttpClient CreateHttpClient(string validIssuer,
         Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenRequestQuery), Token>
-            tokenFactoryFunc, Func<UserInfoEndpointResponseBody> userInfoResponseFunc)
+            tokenFactoryFunc, Func<UserInfoEndpointResponseBody>? userInfoResponseFunc)
     {
         var openIdHttpClient = CreateHttpClient(
             CreateHttpHandler(validIssuer, tokenFactoryFunc,userInfoResponseFunc));
@@ -38,7 +38,7 @@ public class ConfigForMockedOpenIdConnectServer
 
     public static MockingOpenIdProviderMessageHandler CreateHttpHandler(string validIssuer,
         Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token>
-            tokenFactoryFunc, Func<UserInfoEndpointResponseBody> userInfoResponseFunc)
+            tokenFactoryFunc, Func<UserInfoEndpointResponseBody>? userInfoResponseFunc)
     {
         return new MockingOpenIdProviderMessageHandler(
             Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration(validIssuer), Consts.ValidSigningCertificate,
@@ -55,7 +55,11 @@ public class ConfigForMockedOpenIdConnectServer
 
     public static IConfigurationManager<OpenIdConnectConfiguration>? Create(string validIssuer)
     {
-        return new MockingOpenIdProviderMessageHandler(
+        var backChannelMessageHandler = new MockingOpenIdProviderMessageHandler(
             Consts.ValidOpenIdConnectDiscoveryDocumentConfiguration(validIssuer), Consts.ValidSigningCertificate);
+
+        return new ConfigurationManager<OpenIdConnectConfiguration>(
+            Consts.WellKnownOpenIdConfiguration, new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever(CreateHttpClient(backChannelMessageHandler)));
     }
 }
