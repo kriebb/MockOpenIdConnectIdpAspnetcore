@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ConcertApp.Ui.Tests.BoilerPlate;
+using Microsoft.Extensions.Logging.Debug;
 using NUnit.Framework;
 
 namespace ConcertApp.Ui.Tests;
@@ -7,12 +8,14 @@ namespace ConcertApp.Ui.Tests;
 [SetUpFixture]
 public class SetUpConfig
 {
-    public static PlaywrightCompatibleWebApplicationFactory WebAppFactory { get; set; }
+    public static PlaywrightCompatibleWebApplicationFactory? WebAppFactory { get; set; }
 
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
         Trace.Listeners.Add(new ConsoleTraceListener());
+        Trace.Listeners.Add(new DefaultTraceListener());
+
         WebAppFactory = new PlaywrightCompatibleWebApplicationFactory();
         
 
@@ -26,7 +29,7 @@ public class SetUpConfig
     
     public async Task OneTimeTearDown()
     {
-       await WebAppFactory.DisposeAsync();
+        if (WebAppFactory != null) await WebAppFactory.DisposeAsync();
     }
 
 }

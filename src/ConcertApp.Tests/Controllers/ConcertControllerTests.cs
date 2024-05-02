@@ -53,7 +53,7 @@ public class ConcertControllerTests(ITestOutputHelper testOutputHelper, ServerSe
         private JwtBearerCustomAccessTokenHandler AddTokens(TokenParameters tokenParameters)
         {
             return new JwtBearerCustomAccessTokenHandler(tokenParameters,
-                _fixture.Services.GetService<ILogger<ConcertControllerTests>>());
+                _fixture.Services.GetRequiredService<ILogger<JwtBearerCustomAccessTokenHandler>>());
         }
 
         [Fact()]

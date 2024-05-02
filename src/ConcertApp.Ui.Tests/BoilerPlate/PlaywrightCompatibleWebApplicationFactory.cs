@@ -1,13 +1,18 @@
+using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
+using ConcertApp.Ui.Tests.BoilerPlate.Json;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using NUnit.Framework;
 using OIdcMockingInfrastructure;
@@ -38,7 +43,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     }
 
 
-    public Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token> TokenFactoryFunc { get; set; } 
+    public Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token>? TokenFactoryFunc { get; set; } 
     public Func<UserInfoEndpointResponseBody>? UserInfoResponseFunc { get; set; }
 
     public Uri ConcertsApiDependencyUrl { get; set; }
@@ -50,7 +55,6 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     private IHost? _hostThatRunsTestServer;
 
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new IPEndPoint(IPAddress.Loopback, port: 0);
-    private ILoggerFactory? _logger;
 
     public static int GetAvailablePort()
     {
@@ -64,11 +68,15 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
         return port;
     }
-    
-    public ILoggerFactory LoggerFactory => _logger ??= Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
-        .AddConsole()
-        .AddDebug()
-        .SetMinimumLevel(LogLevel.Trace));
+
+    public static ILoggerFactory CreateLoggerFactory()
+    {
+        return Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
+            .AddConsole(x => x.FormatterName = "custom")
+            .SetMinimumLevel(LogLevel.Trace).Services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>()
+        );
+
+    }
 
     /// <summary>
     /// CreateHost to ensure we can use the deferred way of capturing the program.cs Webhostbuilder without refactoring program.cs
@@ -77,7 +85,6 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
     /// <returns></returns>
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        var logger = LoggerFactory.CreateLogger<PlaywrightCompatibleWebApplicationFactory>();
         var kestrelPort = GetAvailablePort();
         try
         {
@@ -120,12 +127,14 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                 .ConfigureLogging(loggingBuilder =>
                 {
                     loggingBuilder.ClearProviders();
-                    loggingBuilder.AddConsole();
+                    loggingBuilder.AddConsole(x => x.FormatterName = "custom");
+
                     loggingBuilder.AddDebug();
                 })
                 .ConfigureServices(services =>
                 {
-                    
+                    services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>();
+
                     services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme,
                     options =>
                     {
@@ -137,90 +146,199 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
                         {
                             OnAuthenticationFailed = context =>
                             {
-                                
-                                logger.LogError("Authentication Failed. Result: {0} Failure:{1}", context.Exception.Message, context.Result?.Failure?.Message);
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Authentication Failed",
+                                    $"Scheme: {context.Scheme?.Name}",
+                                    $"Exception: {context.Exception.Message}",
+                                    $"Failure?: {context.Result?.Failure?.Message}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogError(logMessage);
+
                                 return Task.CompletedTask;
                             },
-                            OnAccessDenied = context => {
+                            OnAccessDenied = context =>
+                            {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var endpoint = context.HttpContext.GetEndpoint();
+                                var authorizeData = endpoint?.Metadata.GetOrderedMetadata<AuthorizeAttribute>();
 
-                                logger.LogError("Access Denied. Result: {0} Failure:{1}",context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                var policies = authorizeData?.SelectMany(x => x.Policy?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? []);
+
+                                var roles = authorizeData?.SelectMany(x =>
+                                    x.Roles?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? []);
+
+
+                                var logMessage = FormatLogMessage(eventCounter, "Forbidden Access",
+                                    $"Scheme: {context.Scheme?.Name}",
+                                    $"Request Path: {context.Request?.Path}",
+                                    $"Request Method: {context.Request?.Method}",
+                                    $"Endpoint policies: {string.Join(",", policies ?? new List<string>())}",
+                                    $"Endpoint roles: {string.Join(",", roles ?? new List<string>())}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnTokenValidated = context =>
                             {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Token Validated",
+                                    $"Scheme: {context.Scheme?.Name}",
+                                    $"User: {context.Principal?.Identity?.Name}",
+                                    $"Claims: {string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>())}",
+                                    $"Token: {context.SecurityToken}",
+                                    $"Authentication Type: {context.Principal?.Identity?.AuthenticationType}",
+                                    $"Is Authenticated: {context.Principal?.Identity?.IsAuthenticated}");
 
-                                logger.LogInformation("Token Validated. User: {0} Claims:{1}", context.Principal?.Identity?.Name, 
-                                    string.Join(",", context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>()));
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnMessageReceived = context =>
                             {
-                                logger.LogInformation($"Message Received: Token?: [{context.Token}]" );
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Message Received",
+                                    $"Scheme: {context.Scheme?.Name}",
+                                    $"Request Path: {context.Request?.Path}",
+                                    $"Request Method: {context.Request?.Method}",
+                                    $"Token: {context.Token}",
+                                    $"AuthenticationProperties: {JsonConvert.SerializeObject(context.Properties)}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
 
                                 return Task.CompletedTask;
                             },
                             OnRedirectToIdentityProvider = context =>
                             {
-                                //Middleware for Browser! Does not pass trough the ConfigurationManager
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Redirect to Identity Provider",
+                                    $"AuthorizationEndpoint: {context.ProtocolMessage?.AuthorizationEndpoint}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
+                                //Middleware for Browser! Does not pass through the ConfigurationManager
                                 //This happens after this event. Why I do not know ==> TODO: ask on GITHUB
                                 context.Properties.Items.Add(OpenIdConnectDefaults.RedirectUriForCodePropertiesKey, context.ProtocolMessage?.RedirectUri);
                                 context.ProtocolMessage!.State = context.Options.StateDataFormat.Protect(context.Properties);
-                                
+
                                 var authorizationRequestUri = context.ProtocolMessage?.BuildRedirectUrl()!;
                                 var mockedAuthorizationCode = backChannelMessageHandler.GetAuthorizationLocationHeaderFromFullUri(authorizationRequestUri);
-                                
-                                logger?.LogInformation("Override Browser Redirect! Redirected to authorization endpoint:" + mockedAuthorizationCode);
+
+                                // Improved log message
+                                logMessage = $"Mocking answer from OpenId Connect Provider! {mockedAuthorizationCode}";
+                                ResourceServerOidc.LogInformation(logMessage);
 
                                 context.HandleResponse();
-                                context.Response.Redirect(mockedAuthorizationCode);
-                                
+                                context.Response!.Redirect(mockedAuthorizationCode);
+
                                 return Task.CompletedTask;
                             },
                             OnRedirectToIdentityProviderForSignOut = context =>
                             {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Redirect to Identity Provider for SignOut",
+                                    $"RedirectUri: {context.ProtocolMessage?.RedirectUri}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
 
-                                logger.LogInformation("Redirect to Identity Provider for SignOut. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnRemoteFailure = context =>
                             {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Remote Failure",
+                                    $"Result: {context.Result?.Succeeded}",
+                                    $"Failure: {context.Result?.Failure?.Message}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
 
-                                logger.LogError("Remote Failure. Result: {0} Failure:{1}", context.Result?.Succeeded, context.Result?.Failure?.Message);
+                                ResourceServerOidc?.LogError(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnSignedOutCallbackRedirect = context =>
                             {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Signed Out Callback Redirect",
+                                    $"RedirectUri: {context.ProtocolMessage?.RedirectUri}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
 
-                                logger.LogInformation("Signed Out Callback Redirect. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnRemoteSignOut = context =>
                             {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Remote SignOut",
+                                    $"RedirectUri: {context.ProtocolMessage?.RedirectUri}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
 
-                                logger.LogInformation("Signed Out Redirect to Identity Provider. RedirectUri: {0}", context.ProtocolMessage?.RedirectUri);
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnTokenResponseReceived = context =>
                             {
-                                logger.LogInformation("Token Response Received. Token: {0}", context.TokenEndpointResponse.AccessToken);
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Token Response Received",
+                                    $"Token: {context.TokenEndpointResponse.AccessToken}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnTicketReceived = context =>
-                                {
-                                    logger.LogInformation("Ticket Received. ReturnUri: {0}", context.ReturnUri);
-                                    return Task.CompletedTask;
-                                },
+                            {
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Ticket Received",
+                                    $"ReturnUri: {context.ReturnUri}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
+                                return Task.CompletedTask;
+                            },
                             OnAuthorizationCodeReceived = context =>
                             {
-                                logger.LogInformation("Authorization Code Received. Code: {0}", context.ProtocolMessage.Code);
-                                
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "Authorization Code Received",
+                                    $"Code: {context.ProtocolMessage.Code}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             },
                             OnUserInformationReceived = context =>
                             {
-                                logger.LogInformation("UserInformation Received. User: {0}", context.User.RootElement.ToString() );
+                                var eventCounter = IncrementEventCounter(context.HttpContext.TraceIdentifier);
+                                var logMessage = FormatLogMessage(eventCounter, "User Information Received",
+                                    $"User: {context.User.RootElement.ToString()}",
+                                    $"Response Status Code: {context.Response?.StatusCode}",
+                                    $"Response Headers: {BuildHeadersString(context.Response?.Headers)}");
+
+                                ResourceServerOidc?.LogInformation(logMessage);
+
                                 return Task.CompletedTask;
                             }
+
                         };
                     });
                 
@@ -263,7 +381,63 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
             throw;
         }
     }
+    private int _eventCounter = 0;
+    private readonly ConcurrentDictionary<string, int> _sequenceNumbers = new();
 
+    private string BuildHeadersString(IHeaderDictionary? headers)
+    {
+        StringBuilder headersBuilder = new StringBuilder();
+        if (headers != null)
+            foreach (var header in headers)
+            {
+                headersBuilder.AppendLine($"{header.Key}: {header.Value}");
+            }
+
+        return headersBuilder.ToString();
+    }
+    private (int EventCounter, int SequenceNumber) IncrementEventCounter(string traceIdentifier)
+    {
+        int eventCounter;
+        int sequenceNumber;
+
+        lock (_sequenceNumbers)
+        {
+            eventCounter = ++_eventCounter;
+            sequenceNumber = _sequenceNumbers.AddOrUpdate(traceIdentifier, 1, (_, value) => value + 1);
+        }
+
+        return (eventCounter, sequenceNumber);
+    }
+
+    private string FormatLogMessage((int EventCounter, int SequenceNumber) eventInfo, string eventName, params string[] details)
+    {
+        const int maxLineLength = 80;
+        const string indent = "    ";
+
+        var builder = new StringBuilder();
+        builder.AppendLine($"Event {eventInfo.EventCounter}.{eventInfo.SequenceNumber}: {eventName}");
+
+        foreach (var detail in details)
+        {
+            var words = detail.Split(';');
+
+            var line = indent;
+            foreach (var word in words)
+            {
+                if ((line + word).Length > maxLineLength)
+                {
+                    builder.AppendLine(line);
+                    line = indent;
+                }
+
+                line += $"{word} ";
+            }
+
+            builder.AppendLine(line);
+        }
+
+        return builder.ToString();
+    }
     public string ServerAddress
     {
         get
@@ -282,7 +456,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
         }
     }
 
-
+    public ILogger? ResourceServerOidc { get; set; } 
 
     private void EnsureServer()
     {
@@ -300,6 +474,7 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
         await base.DisposeAsync();
         try
         {
+            
             _hostThatRunsTestServer?.Dispose();
 
             if (_hostThatRunsTestServer != null)
@@ -329,4 +504,3 @@ public class PlaywrightCompatibleWebApplicationFactory :  WebApplicationFactory<
 
     }
 }
-

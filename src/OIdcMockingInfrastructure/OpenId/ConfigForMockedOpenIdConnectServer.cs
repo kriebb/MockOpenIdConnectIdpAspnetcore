@@ -37,7 +37,7 @@ public class ConfigForMockedOpenIdConnectServer
     }
 
     public static MockingOpenIdProviderMessageHandler CreateHttpHandler(string validIssuer,
-        Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token>
+        Func<(NameValueCollection AuthorizationCodeRequestQuery, NameValueCollection TokenCode), Token>?
             tokenFactoryFunc, Func<UserInfoEndpointResponseBody>? userInfoResponseFunc)
     {
         return new MockingOpenIdProviderMessageHandler(

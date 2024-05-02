@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using ConcertApp.Ui.Tests.BoilerPlate;
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using NUnit.Framework;
@@ -27,65 +29,108 @@ public class GivenHomePage : PageTest
                 RecordHarMode = HarMode.Full,
                 RecordHarContent = HarContentPolicy.Embed,
                 RecordHarPath = @"c:\tools\har.har",
+                RecordVideoDir = @"c:\tools\video"
             };
         
-
         return options;
     }
 
-    private ILoggerFactory LoggerFactory { get; } = SetUpConfig.WebAppFactory.LoggerFactory;
-
+    public ILoggerFactory? LoggerFactory { get; set; }
     [SetUp]
     public async Task Setup()
     {
-        var logger = SetUpConfig.WebAppFactory.LoggerFactory.CreateLogger<GivenHomePage>();
         bool ShouldIgnore(string url)
         {
             // Matches .js or .css followed by an optional version query string ?v=
             var pattern = @".*\.(js|css)(\?v=.*)?$";
-            return Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
+            var isResource = Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
+
+            // Matches the root URL of the application, regardless of the port number
+            var isRoot = false;//new Uri(url).AbsolutePath == "/";
+
+            return isResource || isRoot;
         }
 
+        //Ensure that logging happens in the right output window
+        LoggerFactory = PlaywrightCompatibleWebApplicationFactory.CreateLoggerFactory();
+        SetUpConfig.WebAppFactory!.ResourceServerOidc = LoggerFactory.CreateLogger("ResourceServer-Oidc");
         Page.Request += (_, request) =>
         {
             if (!ShouldIgnore(request.Url))
             {
-                using(logger.BeginScope("SetUp"))
-                    logger.LogInformation("Request Sent: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+
+
+                var logger = LoggerFactory.CreateLogger("Browser.Request");
+
+
+                var eventInfo = IncrementEventCounter(request.Url);
+                var logMessage = FormatLogMessage(
+                    eventInfo,
+                    "Request Sent",
+                    $"Method: {request.Method}",
+                    $"Url: {request.Url}",
+                    $"PostData: {Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>())}",
+                    $"Headers: {BuildHeadersString(request.Headers)}"
+                );
+                logger.LogInformation(logMessage);
             }
         };
+
 
         Page.RequestFailed += (_, request) =>
         {
             if (!ShouldIgnore(request.Url))
             {
-                using(logger.BeginScope("SetUp"))
-                    logger.LogError("Request Failed: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
+                var logger = LoggerFactory.CreateLogger("Browser.RequestFailed");
+
+
+                var eventInfo = IncrementEventCounter(request.Url);
+                var logMessage = FormatLogMessage(
+                    eventInfo,
+                    "Request Failed",
+                    $"Method: {request.Method}",
+                    $"Url: {request.Url}",
+                    $"PostData: {Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>())}",
+                    $"Headers: {BuildHeadersString(request.Headers)}"
+                );
+                logger.LogError(logMessage);
             }
         };
 
         Page.RequestFinished += (_, request) =>
         {
-            if (!ShouldIgnore(request.Url))
-            {
-                using(logger.BeginScope("SetUp"))
-                    logger.LogInformation("Request Finished: {Method} {Url} {PostData}", request.Method, request.Url, Encoding.Default.GetString(request.PostDataBuffer ?? Array.Empty<byte>()));
-            }
+            // do nothing. not needed for this demo
         };
+
 
         Page.Response += (_, response) =>
         {
             if (!ShouldIgnore(response.Url) || response.Status != 200)
             {
-                using(logger.BeginScope("SetUp"))
-                    logger.LogInformation("Response Received: {Status} {Url}", response.Status, response.Url);
+                var logger = LoggerFactory.CreateLogger("Browser.Response");
+
+
+                {
+
+                    var eventInfo = IncrementEventCounter(response.Request.Url);
+                    var logMessage = FormatLogMessage(
+                        eventInfo,
+                        "Response Received",
+                        $"Status: {response.Status}",
+                        $"Url: {response.Url}",
+                        $"Headers: {BuildHeadersString(response.Headers)}"
+                    );
+                    logger.LogInformation(logMessage);
+
+                }
             }
         };
-        
+
+
         Page.SetDefaultTimeout(3000);
         Page.SetDefaultNavigationTimeout(3000);
 
-        SetUpConfig.WebAppFactory.TokenFactoryFunc = args =>
+        SetUpConfig.WebAppFactory!.TokenFactoryFunc = args =>
         {
             var scope = args.AuthorizationCodeRequestQuery["scope"]!;
             var nonce = args.AuthorizationCodeRequestQuery["nonce"];
@@ -112,6 +157,8 @@ public class GivenHomePage : PageTest
         );
         
         SetUpConfig.WebAppFactory.ConcertsApiDependency.ResetMappings();
+
+        LoggerFactory.CreateLogger("SetUp").LogInformation($"Navigating to {SetUpConfig.WebAppFactory.ServerAddress}. Ignoring  logs that have only this address, or requests for javascript and css files, for demo purposes.");
         await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
 
     }
@@ -120,13 +167,14 @@ public class GivenHomePage : PageTest
     [Test]
     public async Task WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear()
     {
-        var logger = LoggerFactory.CreateLogger(nameof(WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear));
+        
+        var logger = LoggerFactory!.CreateLogger(nameof(WhenWeOpenTheHomepage_TheWelcomeTextShouldAppear));
         logger.LogInformation("Starting test");
         
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory!.ServerAddress}");
 
         await Expect(Page.GetByText( "Welcome to ConcertApp!")).ToBeInViewportAsync();
     }
@@ -134,13 +182,13 @@ public class GivenHomePage : PageTest
     [Test]
     public async Task WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser()
     {
-        var logger = LoggerFactory.CreateLogger(nameof(WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser));
+        var logger = LoggerFactory!.CreateLogger(nameof(WhenWeClickOnLogin_WeShouldSeeATextWelcomingTheUser));
         logger.LogInformation("Starting test");
         
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        await Page.GotoAsync($"{SetUpConfig.WebAppFactory.ServerAddress}");
+        await Page.GotoAsync($"{SetUpConfig.WebAppFactory!.ServerAddress}");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
 
         await Expect(Page.GetByText( "Welcome Kristof Riebbels!")).ToBeInViewportAsync();
@@ -188,4 +236,85 @@ public class GivenHomePage : PageTest
 
         return refreshToken;
     }
+
+    private int _eventCounter = 0;
+    private readonly ConcurrentDictionary<string, int> _sequenceNumbers = new();
+
+    private string BuildHeadersString(Dictionary<string, string>? headers)
+    {
+        StringBuilder headersBuilder = new StringBuilder();
+        if (headers != null)
+        {
+            foreach (var header in headers)
+            {
+                // Ignore specified headers
+                if (header.Key.ToLower() != "user-agent" &&
+                    header.Key.ToLower() != "sec-ch-ua" &&
+                    header.Key.ToLower() != "sec-ch-ua-mobile" &&
+                    header.Key.ToLower() != "sec-ch-ua-platform" &&
+                    header.Key.ToLower() != "expires" &&
+                    header.Key.ToLower() != "samesite" &&
+                    header.Key.ToLower() != "server" &&
+                    header.Key.ToLower() != "date")
+                {
+                    headersBuilder.AppendLine($"{header.Key}: {header.Value}");
+                }
+            }
+        }
+
+        return headersBuilder.ToString();
+    }
+
+    private (int EventCounter, int SequenceNumber) IncrementEventCounter(string traceIdentifier)
+    {
+        int eventCounter;
+        int sequenceNumber;
+
+        lock (_sequenceNumbers)
+        {
+            eventCounter = ++_eventCounter;
+            sequenceNumber = _sequenceNumbers.AddOrUpdate(traceIdentifier, 1, (_, value) => value + 1);
+        }
+
+        return (eventCounter, sequenceNumber);
+    }
+
+    private string FormatLogMessage((int EventCounter, int SequenceNumber) eventInfo, string eventName, params string[] details)
+    {
+        const int maxLineLength = 80;
+        const string indent = "    ";
+
+        var builder = new StringBuilder();
+        builder.AppendLine($"Event {eventInfo.EventCounter}.{eventInfo.SequenceNumber}: {eventName}");
+
+        foreach (var detail in details)
+        {
+            var words = detail.Split(';');
+
+            var line = indent;
+            foreach (var word in words)
+            {
+                if ((line + word).Length > maxLineLength)
+                {
+                    builder.AppendLine(line);
+                    line = indent;
+                }
+
+                line += $"{word}";
+            }
+
+            builder.AppendLine(line);
+        }
+
+        return builder.ToString();
+    }
+
+    [TearDown]
+    public void Dispose()
+    {
+        LoggerFactory?.Dispose();
+    }
+
+
+
 }

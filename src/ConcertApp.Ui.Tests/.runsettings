@@ -8,8 +8,8 @@
   <RunConfiguration>
     <EnvironmentVariables>
       <!-- For debugging selectors, it's recommend to set the following environment variable -->
-      <DEBUG>pw:api</DEBUG>
-      <PWDEBUG>0</PWDEBUG>
+      <!--<DEBUG>pw:api</DEBUG>-->
+      <!--<PWDEBUG>0</PWDEBUG>-->
 
 	</EnvironmentVariables>
   </RunConfiguration>
